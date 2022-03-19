@@ -1,0 +1,11 @@
+Enables autoscroll on linux using xorg-server
+
+Autoscroll means that once you press "--button_start",
+you can scroll just by moving your mouse untill you press "--button_end"
+
+If "--button_hold" is set, the scrolling will end once you release "--button_start"
+
+To find the number of the button you can use xinput (requires xinput package) or set "--show_buttons"
+
+How to use xinput:
+    "xinput list" -> find your mouse's name or id -> "xinput test <name or id>"

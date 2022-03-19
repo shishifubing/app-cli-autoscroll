@@ -1,65 +1,104 @@
-original - https://github.com/TWolczanski/linux-autoscroll
+# Information
 
-This simple Python script gives you a Windows-like autoscroll feature on Linux. It works system-wide on every distribution with Xorg.
+Enables autoscroll on linux using xorg-server
 
-## Installation
-There are two versions of the script. One of them (`autoscroll.py`) displays an icon indicating the place where the scroll mode has been entered and the other (`autoscroll_no_icon.py`) does not.
-1. Clone the repository:
-```
-git clone https://github.com/TWolczanski/linux-autoscroll.git
-cd linux-autoscroll/
-```
-2. Create a Python virtual environment and activate it:
-```
-python3 -m venv .autoscroll
-source .autoscroll/bin/activate
-```
-3. Install necessary Python libraries. For `autoscroll_no_icon.py` you don't need the last one.
-```
-python3 -m pip install wheel
-python3 -m pip install pynput
-python3 -m pip install PyQt5
-```
-4. Add the following shebang to the script (substitute `/path/to` with the actual path):
-```
-#!/path/to/linux-autoscroll/.autoscroll/bin/python3
-```
-5. Make the script executable:
-```
-chmod u+x autoscroll.py
-```
-or
-```
-chmod u+x autoscroll_no_icon.py
-```
-6. Add the script to the list of autostart commands.
+Yes, you can use a config file in `/etc/X11/xorg.conf.d/` to achieve the autoscrolling (see [the example](#xorg-server-config-example)), but it does not
+work in Firefox, only in Chrome (tested on `Linux 5.16.15-arch1-1 #1 SMP PREEMPT Thu, 17 Mar 2022 00:30:09 +0000`, `Firefox 98.0.1` and `Chrome 96.0.4664.110 (Official Build, ungoogled-chromium)`)
 
-## Configuration
+Autoscroll means that once you press "--button_start",
+you can scroll just by moving your mouse untill you press "--button_end"
 
-You can adjust the `DELAY`, `BUTTON_START`, `BUTTON_STOP` and `DEAD_AREA` constants for better experience.
+If "--button_hold" is set, the scrolling will end once you release "--button_start"
 
-By changing `DELAY` you can adjust the speed of scrolling. By default its value is 5 but you may find it either too fast or too slow. You can decrease the value to make scrolling faster or increase it to make scrolling slower.
+To find the number of the button you can use xinput (requires xinput package) or set "--show_buttons"
 
-Modifying `BUTTON_START` and `BUTTON_STOP` is going to change the button used for entering and exiting the scroll mode. The default for both is the middle mouse button but if your mouse has additional side buttons it might be a good idea to use them instead, as the middle button is often used for different purposes (for example to open a link in a new tab in most web browsers or to copy and paste text system-wide). As the script is using the pynput library, you can hopefully find names of all of your mouse buttons with the following piece of code:
-```python
-from pynput.mouse import Button, Listener
+How to use xinput:
+    "xinput list" -> find your mouse's name or id -> "xinput test <name or id>"
 
-def on_click(x, y, button, pressed):
-    print(button)
-    # click the middle button to exit
-    if button == Button.middle:
-        return False
+# Usage
 
-with Listener(on_click = on_click) as listener:
-    listener.join()
+## environment
+
+python3 -m venv venv
+. venv/bin/activate
+pip install -r requirements.txt
+python linux-autoscroll.start
+
+## command
+
 ```
-\
-By default the scrolling begins when the mouse pointer is 30 px below or above the point where `BUTTON_START` was pressed. In order to change that you can modify `DEAD_AREA`. If you set it to 0 (which is the minimum value), the scrolling will be paused only when the vertical position of the cursor is exactly the same as the position in which the scroll mode was activated.
+usage: linux-xorg-autoscroll [-h] [--delay DELAY] [--button_start BUTTON_START]
+                             [--button_hold | --no-button_hold] [--button_end BUTTON_END]
+                             [--dead_area DEAD_AREA] [--icon_path ICON_PATH] [--icon_size ICON_SIZE]
+                             [--show_buttons | --no-show_buttons] [--show_movement | --no-show_movement]
 
-In `autoscroll.py` you can also modify the `ICON_PATH` and `ICON_SIZE` constants. If you don't like the default icon displayed in the scroll mode, in `ICON_PATH` you can specify the absolute path to the image you want to be used instead. `ICON_SIZE` is the size (maximum of width and height) you want your image to be scaled to.
+Enables autoscroll on linux using xorg-server
 
-## Usage
+Autoscroll means that once you press "--button_start",
+you can scroll just by moving your mouse untill you press "--button_end"
 
-Click the middle mouse button (or the button you assigned to `BUTTON_START`) and move your mouse to start scrolling. The further you move the mouse (vertically) from the point where you have clicked the button, the faster the scrolling becomes. To leave the scroll mode, simply press the middle mouse button again (or press the button you assigned to `BUTTON_STOP`).
+If "--button_hold" is set, the scrolling will end once you release "--button_start"
 
-Note that at slow speed the scrolling is not smooth and (probably) there is no way to make it smooth. The smoothness depends on the distance your mouse scrolls per one wheel click. There are some programs in which this distance is very small (e.g. Chrome, Teams and Discord) and in these programs the autoscroll is smoother than in other programs.
+To find the number of the button you can use xinput (requires xinput package) or set "--show_buttons"
+
+How to use xinput:
+"xinput list" -> find your mouse's name or id -> "xinput test <name or id>"
+
+options:
+  -h, --help            show this help message and exit
+  --delay DELAY         sets the speed of scrolling, defaults to 5
+  --button_start BUTTON_START
+                        the button that starts the scrolling when pressed, defaults to 2 (middle click)
+  --button_hold, --no-button_hold
+                        if set, button_end is ignored and the scrolling will be active only while
+                        button_start is pressed
+  --button_end BUTTON_END
+                        the button that ends the scrolling when pressed, defaults to 2 (middle click)
+  --dead_area DEAD_AREA
+                        the size (in px) of the area below and above the starting point where scrolling
+                        is paused, defaults to 20
+  --icon_path ICON_PATH
+                        if specified, the icon on the path will be displayed while the scrolling mode is
+                        active, supported formats: svg, png, jpg, jpeg, gif, bmp, pbm, pgm, ppm, xbm,
+                        xpm, the path must be absolute, defaults resources/img/icon.svg (relative to the
+                        package)
+  --icon_size ICON_SIZE
+                        the size of the icon in px, only svg images can be resized without loss of
+                        quality
+  --show_buttons, --no-show_buttons
+                        if set, button clicks will be printed to stdout
+  --show_movement, --no-show_movement
+```
+
+# Examples
+
+## xorg-server config example
+```conf
+# https://bbs.archlinux.org/viewtopic.php?id=261138
+Section "InputClass"
+     ### general
+     ## id, obtained from "xinput list"
+     Identifier "Logitech USB Trackball"
+     ## driver, obtained from "xinput list-props <id>"
+     Driver "libinput"
+
+     ### options
+     ## name
+     # Option "Name" "Logitech USB Trackball"
+     ## scrolling with the button
+     Option "ScrollMethod" "button"
+     ## specifies the scroll button
+     ## middle click
+     Option "ScrollButton" "2"
+     ## if 1, instead of scrolling while pressing the button,
+     ## it makes the scroll active untill you press the button again
+     Option "ScrollButtonLock" "0"
+     ## acceleration of scrolling
+     Option "AccelSpeed" "0"
+     ## maps buttons to each over, button numbers
+     ## can be obtained from "xinput list <id>"
+     Option "ButtonMapping" "1 0 3 0 0 0 0 2 0"
+     ## skips pixels to move faster
+     # Option "TransformationMatrix" "2.4 0 0 0 2.4 0 0 0 1"
+EndSection
+```
