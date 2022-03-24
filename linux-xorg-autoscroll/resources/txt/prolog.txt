@@ -1,0 +1,18 @@
+Enables universal autoscroll
+
+Once you press "--button-start", you can scroll vertically or horizontally just
+by moving your mouse untill you press "--button-end".
+
+To find the number of the button you can use "--debug click" or other commands,
+
+
+
+f'Constant part of the scrolling speed. Defaults to {SPEED}.'
+
+f'Distance from the starting point is multiplied by the accelaration. Higher the acceleraton, faster the scrolling speed will be further away you are from the the starting point. 0 means no acceleration - speed of scrolling will be constant. Defaults to {ACCELERATION_DISTANCE}.'
+
+
+
+Size (in pixels) of the square area around the starting point where scrolling is paused. Defaults to {DEAD_AREA}.
+
+Button configuration. This button starts the scrolling mode when pressed. Start button defaults to {BUTTON_START}, end button defaults to the start button. This button ends the scrolling mode when pressed. Defaults to "--button-start".

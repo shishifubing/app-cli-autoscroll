@@ -1,28 +1,64 @@
-from argparse import BooleanOptionalAction
+from enum import Enum
+from typing import Any, Dict, Tuple
+from argparse import RawDescriptionHelpFormatter
+from os import environ as os_environ
+from .functions import get_resource_content
 
-ARGUMENTS = (('--delay',
-              {'help': 'sets the speed of scrolling, defaults to 5',
-               'type': int}),
-             ('--button_start',
-              {'help': 'the button that starts the scrolling when pressed, defaults to 2 (middle click)',
-               'type': int}),
-             ('--button_hold',
-              {'help': 'if set, button_end is ignored and the scrolling will be active only while button_start is pressed',
-               'action': BooleanOptionalAction}),
-             ('--button_end',
-              {'help': 'the button that ends the scrolling when pressed, defaults to 2 (middle click)',
-               'type': int}),
-             ('--dead_area',
-              {'help': 'the size (in px) of the area below and above the starting point where scrolling is paused, defaults to 20',
-               'type': int}),
-             ('--icon_path',
-              {'help': 'if specified, the icon on the path will be displayed while the scrolling mode is active, supported formats: svg, png, jpg, jpeg, gif, bmp, pbm, pgm, ppm, xbm, xpm, the path must be absolute, defaults resources/img/icon.svg (relative to the package)'}),
-             ('--icon_size',
-              {'help': 'the size of the icon in px, only svg images can be resized without loss of quality',
-               'type': int}),
-             ('--show_buttons',
-              {'help': 'if set, button clicks will be printed to stdout',
-               'action': BooleanOptionalAction}),
-             ('--show_movement',
-              {'help': 'if set, mouse movements will be printed to stdout',
-               'action': BooleanOptionalAction}))
+SCROLLING_SPEED: int = 300
+SCROLLING_ACCELERATION_DISTANCE: int = 10
+SCROLLING_SLEEP_INTERVAL_INITIAL: float = 0.1
+SCROLLING_DEAD_AREA: int = 50
+SCROLLING_AUTOSCROLL: bool = True
+
+BUTTONS_START: int = 2
+BUTTONS_HOLD: bool = False
+
+ICON_ENABLE: bool = False
+ICON_SIZE: int = 30
+ICON_PATH: str = 'resources/img/icon.svg'
+ICON_ERROR: str = 'you enabled the icon ("enable" is "True") but the qt5 package is not installed'
+
+CONFIG_PATH: str = f'{os_environ.get("HOME")}/.config/autoscroll/config.txt'
+CONFIG_ENABLE: bool = False
+CONFIG_LISTEN: bool = False
+CONFIG_SLEEP: int = 5
+CONFIG_ERROR_ENABLE: str = 'you are trying to enable the config (\'enable\' is set to \'True\'), but the path is not valid'
+CONFIG_ERROR_PARSE: str = 'you are trying to parse the config file, but \'enable\' is \'False\''
+
+DEBUG_SCROLL: bool = False
+DEBUG_CLICK: bool = False
+DEBUG_ARGUMENTS: bool = False
+DEBUG_PADDING: int = 16
+
+COORDINATE_NAME: str = 'coordinates'
+
+PARSER_INITIALIZER: Dict[str, Any] = {
+    'prog': 'linux-xorg-autoscroll',
+    'formatter_class': RawDescriptionHelpFormatter,
+    'description': get_resource_content('resources/txt/prolog.txt')}
+
+
+class Arguments(Enum):
+    enable = 0
+    scrolling = 1
+    buttons = 2
+    icon = 3
+    debug = 4
+
+
+def construct(argument): return f'-{argument.name[0]}', f'--{argument.name}'
+
+
+meta = {'nargs': 2, 'action': 'append', 'metavar': ''}
+
+
+ARGUMENTS: Tuple[Tuple[Tuple[str, str], Dict[str, Any]]] = (
+    (construct(Arguments.scrolling),
+     {'help': 'speed dead_area acceleration', **meta}),
+    (construct(Arguments.buttons),
+     {'help': f'hold start end', **meta}),
+    (construct(Arguments.icon),
+     {'help': f'enable path size', **meta}),
+    (construct(Arguments.debug),
+     {'help': 'Debug options. If "scroll" is passed, scroll information will be printed to stdout. If "click" is passed, click information will be printed to stdout.',
+      'nargs': '*', 'metavar': ('scroll', 'click')}))
