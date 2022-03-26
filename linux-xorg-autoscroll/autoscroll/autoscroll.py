@@ -1,39 +1,37 @@
-from typing import Any, Dict, List, Tuple, Union
-from pynput.mouse import Button, Controller, Listener
+from .support import Base, Config, Scrolling, Icon, Buttons, Debug
+from typing import Any, Dict
+from pynput.mouse import Button, Listener
 from threading import Event, Thread
 from time import sleep
-from .support import Base, Config, Scrolling, Coordinates, Icon, Buttons, Debug
-from .functions import raise_type_error
-from .constants import SCROLLING_SLEEP_INTERVAL_INITIAL
+from signal import SIGABRT, SIGHUP, SIGKILL, signal as signal_signal, SIGINT, SIGTERM
 
 
 class Autoscroll(Base):
 
-    def __init__(self, *args, parse_argv: bool = False, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         self.scrolling: Scrolling = Scrolling()
         self.icon: Icon = Icon()
         self.config: Config = Config()
         self.buttons: Buttons = Buttons()
         self.debug: Debug = Debug()
-
         self.event_end: Event = Event()
 
+        self.update(*args, **kwargs)
+        self._print('initializer', self.debug.arguments)
+
+        # all threads used
         self.thread_scroll_listener: Listener = Listener(
             on_move=self._on_move,
-            on_click=self._on_click)
-        self.thread_scroll: Thread = Thread(
+            on_click=self._on_click,
+            daemon=True)
+        self.thread_scrolling: Thread = Thread(
             target=self._loop,
-            args=(self._is_not_end, self.scrolling.scroll,
-                  {}, {'print_debug': self.debug.scroll}))
-        # self.thread_config: Thread = Thread(
-        #    target=self._loop,
-        #    args=(self.is_not_end_config, self._config))
-
-        self.update(*args, **kwargs)
-        if self.config.enable:
-            self.update(**self.config.parse_config_file())
-        self.update(**self.config.parse_argv() if parse_argv else {})
-        self._print('initializer', self.debug.arguments)
+            args=(self._is_not_end, self._scroll),
+            daemon=True)
+        self.thread_config: Thread = Thread(
+            target=self._loop,
+            args=(self._is_not_end, self._update_from_config_file),
+            daemon=True)
 
     def update(self,
                scrolling: Dict[str, Any] = None,
@@ -47,31 +45,43 @@ class Autoscroll(Base):
         self.buttons.update(**self._convert(buttons, {}, dict))
         self.debug.update(**self._convert(debug, {}, dict))
 
-    def start(self) -> None:
-        self.event_end.clear()
+    def start(self, parse_argv: bool = False) -> None:
+        self.update(**self.config.parse_argv() if parse_argv else {})
+        self.thread_scrolling.start()
         self.thread_scroll_listener.start()
-        self.thread_scroll.start()
+        self.thread_config.start()
 
     def stop(self) -> None:
-        self.event_end.set()
         self.thread_scroll_listener.stop()
+        self.scrolling.event_end.set()
+        self.event_end.set()
+
+    def _update_from_config_file(self) -> None:
+        self.config.event_enabled.wait()
+        self.update(**self.config.parse_config_file())
+        sleep(self.config.interval)
+
+    def _scroll(self) -> None:
+        # wait for the scrolling event to be set in _on_click
+        self.scrolling.wait()
+        # wait for a period of time, calculated in _on_move
+        self.scrolling.sleep_for_interval()
+        # scroll on x-axis and y-axis, each scroll is either 1px, 0px, or -1px
+        self.scrolling.scroll_once()
 
     def _on_move(self, x: int, y: int) -> None:
         self.scrolling.set_direction_and_coordinates(x, y)
-
-        distance = self.scrolling.coordinates.distance(absolute=True)
-        interval = (self.scrolling.acceleration * max(distance)
-                    + self.scrolling.speed)
-        self.scrolling.sleep_interval = abs(100 / interval) \
-            if interval else SCROLLING_SLEEP_INTERVAL_INITIAL
+        self.scrolling.set_interval()
 
     def _on_click(self, x: int, y: int, button: Button, pressed: bool) -> None:
+        # sends information about which button was pressed/released
         self.buttons.press(button, pressed)
-        if self._scroll_has_started(button, pressed):
-            self.scrolling.coordinates.initial = x, y
+
+        if not self.scrolling.is_scrolling() and self.buttons.was_start_pressed():
+            self.scrolling.set_initial_coordinates(x, y)
             self.icon.show(x, y)
             self.scrolling.start()
-        if self._scroll_has_ended(button, pressed):
+        elif self.buttons.was_end_pressed() or self.buttons.was_start_released():
             self.scrolling.stop()
             self.icon.close()
 
@@ -79,24 +89,11 @@ class Autoscroll(Base):
         self.scrolling.set_direction_and_coordinates(x, y)
         # debug
         self._print('click', self.debug.click)
-        self.scrolling.stop_started_and_ended()
+        self.scrolling.clear_started_and_ended()
         self.buttons.press_clear()
 
     def _is_not_end(self) -> bool: return not self.event_end.is_set()
 
-    def _scroll_has_started(self, button: Button, pressed: bool) -> bool:
-        return (not self.scrolling.is_scrolling()
-                and self.buttons.is_start(button) and pressed)
-
-    def _scroll_has_ended(self, button: Button, pressed: bool) -> bool:
-        return not self.scrolling.has_started() and (
-            (self.buttons.is_end(button) and pressed)
-            or (self.buttons.hold
-                and (self.buttons.is_start(button) and not pressed)))
-
     def json(self) -> Dict[str, Any]:
         return {'scrolling': self.scrolling, 'buttons': self.buttons,
                 'icon': self.icon, 'debug': self.debug, 'config': self.config}
-
-    def __repr__(self) -> str:
-        return '\n'.join([str(value) for value in self.json().values()])

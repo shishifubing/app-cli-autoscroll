@@ -8,7 +8,7 @@ from .autoscroll import Autoscroll
 def main() -> int:
     app = QApplication(sys_argv)
     app.setQuitOnLastWindowClosed(False)
-    Autoscroll(parse_argv=True).start()
+    Autoscroll().start(parse_argv=True)
     return app.exec()
 
 

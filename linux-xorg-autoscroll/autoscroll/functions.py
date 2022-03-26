@@ -1,13 +1,24 @@
-from argparse import ArgumentParser, Namespace
 from collections import ChainMap
 from importlib.resources import path as importlib_path
 from os.path import isfile as os_isfile
-from sys import argv as sys_argv
-from sys import exit as sys_exit
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
+from typing import Any, Dict, Iterable, List, Tuple, Union
+
+
+def construct_argument(argument: Tuple[str, Dict[str, str]]):
+    help = '\n'.join([f'{key} ({value[0]}, default - {value[1]})' for key,
+                      value in argument[1].items()])
+    return ((f'-{argument[0][0]}', f'--{argument[0]}'),
+            {'help': f'R|{help}', 'nargs': 2, 'action': 'append'})
+
+
+def convert_bool(value: Union[str, bool] = None) -> bool:
+    return value if isinstance(value, bool) else value.lower() in ('true', '+')
 
 
 def return_none(*args, **kwargs) -> None: return
+
+
+def return_kwargs(**kwargs) -> Dict[Any, Any]: return kwargs
 
 
 def has_dict(*values: Any) -> bool:
@@ -30,7 +41,7 @@ def parse_argument(argument: List[Tuple[str, Any]]) -> Dict[str, Any]:
     return dict(ChainMap(*[construct(item) for item in convert(argument)]))
 
 
-def parse_arguments(arguments: Dict[str, Any]) -> Dict[str, Any]:
+def parse_arguments_old(arguments: Dict[str, Any]) -> Dict[str, Any]:
     return {name: parse_argument(value) for name, value in arguments.items()}
 
 

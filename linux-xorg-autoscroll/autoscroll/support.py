@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+
 from threading import Event
 from time import sleep
 from pynput.mouse import Button, Controller, Listener
@@ -8,10 +9,8 @@ from .constants import (
     BUTTONS_START,
     CONFIG_ENABLE,
     CONFIG_ERROR_ENABLE,
-    CONFIG_ERROR_PARSE,
-    CONFIG_LISTEN,
     CONFIG_PATH,
-    CONFIG_SLEEP,
+    CONFIG_INTERVAL,
     COORDINATE_NAME,
     DEBUG_ARGUMENTS,
     DEBUG_CLICK,
@@ -25,9 +24,9 @@ from .constants import (
     SCROLLING_ACCELERATION_DISTANCE,
     SCROLLING_DEAD_AREA,
     SCROLLING_SLEEP_INTERVAL_INITIAL,
-    SCROLLING_AUTOSCROLL,
     SCROLLING_SPEED)
-from .functions import check_iterable, construct_coordinates, has_dict, parse_arguments, raise_type_error, return_none
+from .functions import check_iterable, construct_coordinates, convert_bool, has_dict, raise_type_error, return_kwargs, return_none
+from .arguments import ArgparseParser, parse_arguments
 from typing import Any, Callable, Dict, Iterable, List, Tuple, Type, Union
 from threading import Event, Thread
 from os import stat as os_stat
@@ -52,10 +51,18 @@ class Base:
     def __repr__(self) -> str:
         name = self.name if hasattr(self, 'name') else type(self).__name__
         raise_type_error(name, str)
-        debug = {key: str(value)
-                 for key, value in self.json().items()
-                 if self._repr_key_is_valid(key)}
-        return self._construct_debug(name.capitalize(), **debug)
+        debug = []
+        not_base = {}
+        for key, value in self.json().items():
+            if not self._repr_key_is_valid(key):
+                continue
+            if isinstance(value, Base):
+                debug.append(str(value))
+                continue
+            not_base[key] = value if isinstance(value, str) else str(value)
+        if not_base:
+            debug.append(self._construct_debug(name.capitalize(), **not_base))
+        return '\n'.join(debug)
 
     def __str__(self) -> str: return self.__repr__()
 
@@ -75,8 +82,9 @@ class Base:
              _type: Any = type(None), _callable: Callable = _convert_callable,
              **kwargs) -> None:
         self._set_if_nonexistent(_name, _nonexistent_value)
-        setattr(self, _name, self._convert(_value, getattr(self, _name), _type,
-                                           _callable, **kwargs))
+        value = self._convert(_value, getattr(self, _name), _type,
+                              _callable, **kwargs)
+        setattr(self, _name, value)
 
     def _convert(self, _value: Any, none_value: Any = None,
                  _type: Any = type(None),
@@ -104,15 +112,18 @@ class Base:
 
     def _loop(self, condition: Callable = return_none,
               action: Callable = return_none,
+              condition_getter: Callable = return_kwargs,
+              action_getter: Callable = return_kwargs,
               condition_parameters: Dict[str, Any] = {},
               action_parameters: Dict[str, Any] = {}) -> None:
-        if not (callable(condition) and callable(action)):
-            raise TypeError(f'either \'{str(condition)}\' or '
-                            f'\'{str(action)}\' is not callable')
+
+        if False in list(map(callable, (condition, action, condition_getter,
+                                        action_getter))):
+            raise TypeError(f'some functions are not callable')
         if not has_dict(condition_parameters, action_parameters):
             raise TypeError('parameters should have \'__dict__\' attribute')
-        while condition(**condition_parameters):
-            action(**action_parameters)
+        while condition(**condition_getter(**condition_parameters)):
+            action(**action_getter(**action_parameters))
 
     def _print(self, header: str, do_print: bool = True) -> str:
         result = f'\n[{header}]\n{self}'
@@ -178,8 +189,10 @@ class Coordinates(Base):
     def direction(self) -> Tuple[int, int]:
         return (self.x.direction(), self.y.direction())
 
-    def distance(self, absolute: bool = False) -> Tuple[int, int]:
-        return (self.x.distance(absolute), self.y.distance(absolute))
+    def distance(self, absolute: bool = False,
+                 reverse: bool = False) -> Tuple[int, int]:
+        x, y = self.x.distance(absolute), self.y.distance(absolute)
+        return (-x, -y) if reverse else (x, y)
 
     @property
     def x(self) -> Coordinate: return self._x
@@ -270,10 +283,24 @@ class Buttons(Base):
 
     def press_clear(self) -> None: self.button, self.is_pressed = None, None
 
-    def is_start(self, button: Button = None) -> bool:
-        return self.start == button
+    def is_start(self) -> bool: return self.start == self.button
 
-    def is_end(self, button: Button = None) -> bool: return self.end == button
+    def is_end(self) -> bool: return self.end == self.button
+
+    def was_action(self) -> bool:
+        return self.button is not None and self.is_pressed is not None
+
+    def was_start_pressed(self) -> bool:
+        return self.was_action() and self.is_start() and self.is_pressed
+
+    def was_end_pressed(self) -> bool:
+        return self.was_action() and self.is_end() and self.is_pressed
+
+    def was_start_released(self) -> bool:
+        return self.was_action() and self.is_start() and not self.is_pressed
+
+    def was_end_released(self) -> bool:
+        return self.was_action() and self.is_end() and not self.is_pressed
 
     @property
     def start(self) -> Button: return self._start
@@ -296,7 +323,7 @@ class Buttons(Base):
 
     @hold.setter
     def hold(self, value: Union[str, bool] = None) -> None:
-        self._set('_hold', BUTTONS_HOLD, value, (str, bool), bool)
+        self._set('_hold', BUTTONS_HOLD, value, (str, bool), convert_bool)
 
     @staticmethod
     def _convert_button(value: Union[Button, int, str]) -> Button:
@@ -313,9 +340,10 @@ class Scrolling(Base):
     def __init__(self, *args, **kwargs) -> None:
         self.sleep_interval: int = SCROLLING_SLEEP_INTERVAL_INITIAL
         self.controller: Controller = Controller()
+        self.event_end: Event = Event()
         self.event_scrolling: Event = Event()
-        self.event_scrolling_started: Event = Event()
-        self.event_scrolling_ended: Event = Event()
+        self.event_started: Event = Event()
+        self.event_ended: Event = Event()
 
         self.coordinates: Coordinates = Coordinates()
         self.coordinates.repr_keys_ignore = ['direction']
@@ -326,48 +354,50 @@ class Scrolling(Base):
 
     def update(self, dead_area: Union[str, int] = None,
                speed: Union[str, int] = None,
-               acceleration: Union[str, int] = None,
-               autoscroll: Union[bool, str] = None) -> None:
+               acceleration: Union[str, int] = None) -> None:
         self.speed: int = speed
         self.dead_area: int = dead_area
         self.acceleration: int = acceleration
-        self.autoscroll: bool = autoscroll
+
+    def sleep_for_interval(self) -> None: sleep(self.sleep_interval)
+
+    def wait(self) -> None: self.event_scrolling.wait()
+
+    def scroll_once(self) -> None:
+        self.controller.scroll(*self.direction.current)
 
     def start(self) -> None:
+        self.event_started.set()
         self.event_scrolling.set()
-        self.event_scrolling_started.set()
 
     def stop(self) -> None:
         self.event_scrolling.clear()
-        self.event_scrolling_ended.set()
+        self.event_ended.set()
 
-    def stop_started_and_ended(self) -> None:
-        self.event_scrolling_ended.clear()
-        self.event_scrolling_started.clear()
+    def clear_started_and_ended(self) -> None:
+        self.event_ended.clear()
+        self.event_started.clear()
 
     def is_scrolling(self) -> bool: return self.event_scrolling.is_set()
 
-    def has_started(self) -> bool: return self.event_scrolling_started.is_set()
+    def has_started(self) -> bool: return self.event_started.is_set()
 
-    def has_ended(self) -> bool: return self.event_scrolling_ended.is_set()
+    def has_ended(self) -> bool: return self.event_ended.is_set()
 
-    def scroll(self, print_debug: bool = False) -> None:
-        # wait for the scrolling event to be set in self._on_click
-        self.event_scrolling.wait()
-        # wait for a period of time, calculated in self._on_move
-        sleep(self.sleep_interval)
-        # scroll on x-axis and y-axis, each scroll is either 1px, 0px, or -1px
-        self.controller.scroll(*self.direction.current)
-        if self.autoscroll:
-            self.controller.move(*self.coordinates.initial)
-        # debug
-        self._print('scroll', print_debug)
+    def is_not_end(self) -> bool: return not self.event_end.is_set()
 
     def is_dead_area(self) -> bool:
-        if not self.autoscroll:
-            return False
         distance = self.coordinates.distance(absolute=True)
         return distance[0] <= self.dead_area and distance[1] <= self.dead_area
+
+    def set_interval(self) -> None:
+        distance = self.coordinates.distance(absolute=True)
+        interval = self.acceleration * max(distance) + self.speed
+        self.sleep_interval = abs(100 / interval) \
+            if interval else SCROLLING_SLEEP_INTERVAL_INITIAL
+
+    def set_initial_coordinates(self, x: int, y: int) -> None:
+        self.coordinates.initial = x, y
 
     def set_direction_and_coordinates(self, x: int, y: int) -> None:
         self.coordinates.update(x, y)
@@ -375,13 +405,14 @@ class Scrolling(Base):
                                   else self.coordinates.direction())
 
     def json(self) -> str:
-        return {'is_scrolling': self.is_scrolling(),
+        return {'active': self.is_scrolling(),
                 'interval': self.sleep_interval,
                 'acceleration': self.acceleration,
                 'dead_area': self.dead_area,
-                'scrolling started': self.event_scrolling_started.is_set(),
-                'scrolling ended': self.event_scrolling_ended.is_set(),
-                'autoscroll': self.autoscroll}
+                'started': self.has_started(),
+                'ended': self.has_ended(),
+                'coordinates': self.coordinates,
+                'direction': self.direction}
 
     @property
     def speed(self) -> int: return self._speed
@@ -391,14 +422,6 @@ class Scrolling(Base):
 
     @property
     def acceleration(self) -> int: return self._acceleration
-
-    @property
-    def autoscroll(self) -> bool: return self._autoscroll
-
-    @autoscroll.setter
-    def autoscroll(self, value: Union[str, bool]) -> None:
-        self._set('_autoscroll', SCROLLING_AUTOSCROLL,
-                  value, (str, bool), bool)
 
     @speed.setter
     def speed(self, value: Union[str, int] = None) -> None:
@@ -453,7 +476,7 @@ class Icon(Base):
 
     @enable.setter
     def enable(self, value: Union[str, bool]) -> None:
-        self._set('_enable', ICON_ENABLE, value, (str, bool), bool)
+        self._set('_enable', ICON_ENABLE, value, (str, bool), convert_bool)
 
     @icon.setter
     def icon(self, value: Tuple[str, int]) -> None:
@@ -491,34 +514,33 @@ class Debug(Base):
 
     @scroll.setter
     def scroll(self, value: bool) -> None:
-        self._set('_scroll', DEBUG_SCROLL, value, (str, bool), bool)
+        self._set('_scroll', DEBUG_SCROLL, value, (str, bool), convert_bool)
 
     @click.setter
     def click(self, value: bool) -> None:
-        self._set('_click', DEBUG_CLICK, value, (str, bool), bool)
+        self._set('_click', DEBUG_CLICK, value, (str, bool), convert_bool)
 
     @arguments.setter
     def arguments(self, value: bool) -> None:
-        self._set('_arguments', DEBUG_ARGUMENTS, value, (str, bool), bool)
+        self._set('_arguments', DEBUG_ARGUMENTS,
+                  value, (str, bool), convert_bool)
 
 
 class Config(Base):
 
     def __init__(self, *args, **kwargs) -> None:
         self.event_end: Event = Event()
+        self.event_enabled: Event = Event()
         self.stamp: int = 0
-        self.argument_parser: ArgumentParser = ArgumentParser(
-            **PARSER_INITIALIZER)
-        for argument in ARGUMENTS:
-            self.argument_parser.add_argument(*argument[0], **argument[1])
-
+        self.argument_parser: ArgparseParser = ArgparseParser(
+            **PARSER_INITIALIZER).add_arguments(**ARGUMENTS)
         self.update(*args, **kwargs)
 
-    def update(self, enable: bool = None, path: str = None,
-               listen: bool = None) -> None:
+    def update(self, enable: Union[bool, str] = None,
+               path: str = None, interval: Union[str, int] = None) -> None:
         self.path: str = path
-        self.listen: bool = listen
         self.enable: bool = enable
+        self.interval: int = interval
 
     def parse_argv(self) -> Dict[str, Any]: return self._parse()
 
@@ -526,29 +548,27 @@ class Config(Base):
         return self._parse(value.split())
 
     def parse_config_file(self) -> Dict[str, Any]:
-        if not self.enable:
-            raise AttributeError(CONFIG_ERROR_PARSE)
+        if not self._has_file_changed():
+            return {}
         with open(self.path, 'r') as config_file:
             config = config_file.read()
-        return self.parse_string(config.replace('\n', ' '))
+        result = self.parse_string(config.replace('\n', ' '))
+        return result
 
     def _parse(self, *args, **kwargs) -> Dict[str, Any]:
         return parse_arguments(
             vars(self.argument_parser.parse_args(*args, **kwargs)))
 
     def _check(self) -> None:
-        if not self._file_changed():
-            return
+        if not self._has_file_changed():
+            return {}
 
-    def _file_changed(self) -> bool:
+    def _has_file_changed(self) -> bool:
         stamp = os_stat(self.path).st_mtime
         if stamp == self.stamp:
             return False
         self.stamp = stamp
         return True
-
-    @ property
-    def listen(self) -> bool: return self._listen
 
     @ property
     def enable(self) -> bool: return self._enable
@@ -557,27 +577,26 @@ class Config(Base):
     def path(self) -> str: return self._path
 
     @property
-    def sleep(self) -> int: return self._sleep
-
-    @ listen.setter
-    def listen(self, value: Union[bool, str]) -> None:
-        self._set('_listen', CONFIG_LISTEN, value, (bool, str))
+    def interval(self) -> int: return self._interval
 
     @ enable.setter
     def enable(self, value: Union[bool, str]) -> None:
-        self._set('_enable', CONFIG_ENABLE, value, (bool, str), bool)
-        if self.enable and not self.path:
+        self._set('_enable', CONFIG_ENABLE, value, (bool, str), convert_bool)
+        if self._enable and not self.path:
             self._enable = False
             raise ValueError(f'{CONFIG_ERROR_ENABLE}, path - {self.path}')
+        if value:
+            self.event_enabled.set()
+        if not value and value is not None:
+            self.event_enabled.clear()
 
-    @ path.setter
+    @interval.setter
+    def interval(self, value: Union[str, int]) -> None:
+        self._set('_interval', CONFIG_INTERVAL, value, (int, str), int)
+
+    @path.setter
     def path(self, value: str) -> None:
         self._set('_path', CONFIG_PATH, value, str)
 
-    @sleep.setter
-    def sleep(self, value: Union[str, int]) -> None:
-        self._set('_sleep', CONFIG_SLEEP, value, (int, str), int)
-
     def json(self) -> Dict[str, Any]:
-        return {'path': self.path, 'listen': self.listen,
-                'enable': self.enable}
+        return {'path': self.path, 'enable': self.enable}

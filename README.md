@@ -2,122 +2,197 @@
 
 # Information
 
-Enables autoscroll on linux using xorg-server
+Enables universal autoscroll.
 
-Yes, you can use a config file in `/etc/X11/xorg.conf.d/` to achieve the autoscrolling (see [the example](#xorg-server-config-example)), but it does not
-work in Firefox, only in Chrome (tested on `Linux 5.16.15-arch1-1 #1 SMP PREEMPT Thu, 17 Mar 2022 00:30:09 +0000`, `Firefox 98.0.1` and `Chrome 96.0.4664.110 (Official Build, ungoogled-chromium)`)
+Pretty pointless since on Linux you can achieve it using config files
+(see [the example](#xorg-server-config-example) and for Windows there are usually drivers.
 
-Autoscroll means that once you press "--button_start",
-you can scroll just by moving your mouse untill you press "--button_end"
+Supports only mouse buttons.
 
-If "--button_hold" is set, the scrolling will end once you release "--button_start"
+## Usage
+You can pass file contents as arguments using '@path' syntax, every argument in that case should begin on the new line.
 
-To find the number of the button you can use xinput (requires xinput package) or set "--show_buttons"
+If you want to dynamically pass arguments without restarting the process you can use '--config' options for it.
 
-How to use xinput:
-    "xinput list" -> find your mouse's name or id -> "xinput test <name or id>"
+Once you press '--buttons-start', you can scroll vertically or horizontally just by moving your mouse untill you press '--buttons-end'.
 
-# Usage
+If '--buttons-hold' is set, the srolling ends once you release '--buttons-start'.
 
-## default icon
+You can change arguments on runtime by enabling a config file, you can do so by setting '--config-enable' and '--config-path'.
 
+By default, an icon is shown once the scrolling starts, you can disable it by setting '--icon-disable'.
 
+Once '--buttons-start' is pressed, the scroll thread starts looping. Every loop consists of sleeping for an interval, then scrolling for either 0, 1, or -1 pixels on both axis towards the starting point.
 
-## environment
+Starting point is the point where '--buttons-start' was pressed.
+
+Sleep interval is recalculated on every mouse move as such:
+
+    100 / ('--scrolling-acceleration' * max(distance) + '--scrolling-speed')
+
+If '--scrolling-acceleration' is not 0, the speed of scrolling will be faster
+
+the farther away you are from the starting point.
+
+If '--scrolling-acceleration' is 0, the speed of the scrolling will be constant.
+
+### environment
 
 python3 -m venv venv
 . venv/bin/activate
 pip install -r requirements.txt
-python linux-autoscroll.start
+python linux-autoscroll.main
 
-## command
+### --help output
 
 ```
-Usage: linux-xorg-autoscroll [-h] [--icon_enable] [--speed SPEED]
-                             [--distance_acceleration DISTANCE_ACCELERATION]
-                             [--button_start BUTTON_START] [--button_hold] [--button_end BUTTON_END]
-                             [--dead_area DEAD_AREA] [--icon_path ICON_PATH] [--icon_size ICON_SIZE]
-                             [--show_buttons] [--show_movement]
+usage: linux-xorg-autoscroll [-h] [-ss SCROLLING_SPEED] [-sd SCROLLING_DEAD_AREA]
+                             [-sa SCROLLING_ACCELERATION] [-bh] [-bs BUTTONS_START] [-be BUTTONS_END]
+                             [-ce] [-cp CONFIG_PATH] [-ci CONFIG_INTERVAL] [-id] [-ip ICON_PATH]
+                             [-is ICON_SIZE] [-dc] [-ds]
 
-Enables autoscroll on linux using xorg-server
+Enables universal autoscroll.
 
-Autoscroll means that once you press "--button_start",
-you can scroll just by moving your mouse untill you press "--button_end"
+Pretty pointless since on Linux you can achieve it using config files and for Windows there are usually drivers.
 
-If "--button_hold" is set, the scrolling will end once you release "--button_start"
+Supports only mouse buttons.
+Once you press '--buttons-start', you can scroll vertically or horizontally just by moving your mouse untill you press '--buttons-end'.
 
-To find the number of the button you can use "--show_buttons" or other commands
+If '--buttons-hold' is set, the srolling ends once you release '--buttons-start'.
 
-Other commands: showkeys, xev, xinput
-    https://superuser.com/questions/248517/show-keys-pressed-in-linux
+You can change arguments on runtime by enabling a config file, you can do so by setting '--config-enable' and '--config-path'.
 
-Scrolling speed is calculated as follows:
-    interval = distance_acceleration * delta / 10 + speed
-    interval = abs(1000 / interval if interval else 500)
-"distance_acceleration" is "--distance_acceleration"
-"delta" is the distance in pixels from the cursor to the starting point
-"speed" is "--speed"
-"interval" is a period (in seconds) between scrolls
-Each scroll can be either 1px, 0px, or -1px, depending on the direction
-The second line is checking for zero and negative values, just in case
+By default, an icon is shown once the scrolling starts, you can disable it by setting '--icon-disable'.
+
+Once '--buttons-start' is pressed, the scroll thread starts looping. Every loop consists of sleeping for an interval, then scrolling for either 0, 1, or -1 pixels on both axis towards the starting point.
+
+Starting point is the point where '--buttons-start' was pressed.
+
+Sleep interval is recalculated on every mouse move as such:
+
+    100 / ('--scrolling-acceleration' * max(distance) + '--scrolling-speed')
+
+If '--scrolling-acceleration' is not 0, the speed of scrolling will be faster
+
+the farther away you are from the starting point.
+
+If '--scrolling-acceleration' is 0, the speed of the scrolling will be constant.
 
 options:
   -h, --help            show this help message and exit
-  --icon_enable         icon usage, if set, an icon will be displayed according to "--icon_path" and "--
-                        icon_size" (requires qt5 package), if not set no icon will be displayed (default
-                        behavior)
-  --speed SPEED         sets the delay between scrolls, defaults to 1000
-  --distance_acceleration DISTANCE_ACCELERATION
-                        higher it is, faster the cursor will move relative to the distance to the start
-                        point, 0 means no acceleration, defaults to 2000
-  --button_start BUTTON_START
-                        the button that starts the scrolling when pressed, defaults to 2 (middle click)
-  --button_hold         if set, scrolling will be active only while "--button_start" is pressed
-  --button_end BUTTON_END
-                        the button that ends the scrolling when pressed, defaults to "--button_start"
-  --dead_area DEAD_AREA
-                        the size (in px) of the area below and above the starting point where scrolling
-                        is paused, defaults to 20
-  --icon_path ICON_PATH
-                        the path to the icon that will be displayed while the scrolling is active,
-                        supported formats: svg, png, jpg, jpeg, gif, bmp, pbm, pgm, ppm, xbm, xpm,
-                        defaults to resources/img/icon.svg (relative to the package)
-  --icon_size ICON_SIZE
-                        the size of the icon in px, only svg images can be resized without losing the
-                        quality
-  --show_buttons        if set, button clicks will be printed to stdout
-  --show_movement       if set, mouse movements will be printed to stdout
+
+scrolling:
+  Scrolling options
+
+  -ss, --scrolling-speed int
+                        constant part of the scrolling speed
+                        [default: 300]
+  -sd, --scrolling-dead-area int
+                        size of the square area aroung the starting point where scrolling will stop, in
+                        pixels
+                        [default: 50]
+  -sa, --scrolling-acceleration int
+                        dynamic part of the scrolling speed, depends on the distance from the point
+                        where the scrolling started, can be set to 0
+                        [default: 10]
+
+buttons:
+  Button options
+
+  Once --buttons-start is pressed, the scrolling starts, when --buttons-end is pressed, it ends
+
+  -bh, --buttons-hold   if set, the scrolling will end once you release --buttons-start
+  -bs, --buttons-start int
+                        button that starts the scrolling
+                        [default: 2]
+  -be, --buttons-end int
+                        button that ends the scrolling
+                        [default: --buttons-start]
+
+config:
+  Configuration file options
+
+  It allows to load arguments on runtime
+
+  -ce, --config-enable  if set, arguments from the configuration file on --config-path will be loaded
+                        every --config-interval
+  -cp, --config-path str
+                        path to the configuration file
+                        [default: /home/kongrentian/.config/autoscroll/config.txt]
+  -ci, --config-interval int
+                        how often the config file should be checked for changes, in seconds
+                        [default: 5]
+
+icon:
+  Scrolling icon options
+
+  By default, an icon is displayed when the scrolling is active
+
+  -id, --icon-disable   if set, the icon will be disabled
+  -ip, --icon-path str  path to the icon
+                        [default: resources/img/icon.svg]
+  -is, --icon-size int  size of the icon, in pixels
+                        [default: 30]
+
+debug:
+  Debug options
+
+  -dc, --debug-click    if set, click info will be printed to stdout
+  -ds, --debug-scroll   if set, scroll info will be printed to stdout
 ```
 
-# Examples
+### examples
+
+#### start
+```
+python3 -m autoscroll.main --buttons-start 1 --debug-click --icon_disable
+```
+
+#### start with the configuration file passed once
+
+```python
+python3 -m autoscroll.main @config.txt
+```
+If config.txt is defined like this, its contents will be used as command line arguments - they will be loaded only once.
+Every argument should start on the new line.
+For example,
+```
+--buttons-start
+1
+--buttons-hold
+--debug_click
+```
+
+#### start with the process listening to the changes in the configuration file
+
+```python
+python3 -m autoscroll.main --config-enable --config-path config.txt
+```
+If config.txt is defined like this, the process will listen for changes in that
+file and update itself.
+Arguments in that case can be placed wherever - on one line, on several lines
+It checks the file for changes every `--config-interval`.
+For example:
+```
+--buttons-start 1 --buttons-hold
+--debug_click
+```
 
 ## xorg-server config example
-```conf
-# https://bbs.archlinux.org/viewtopic.php?id=261138
-Section "InputClass"
-     ### general
-     ## id, obtained from "xinput list"
-     Identifier "Logitech USB Trackball"
-     ## driver, obtained from "xinput list-props <id>"
-     Driver "libinput"
 
-     ### options
-     ## name
-     # Option "Name" "Logitech USB Trackball"
-     ## scrolling with the button
-     Option "ScrollMethod" "button"
-     ## specifies the scroll button
-     ## middle click
-     Option "ScrollButton" "2"
-     ## if 1, instead of scrolling while pressing the button,
-     ## it makes the scroll active untill you press the button again
-     Option "ScrollButtonLock" "0"
-     ## acceleration of scrolling
-     Option "AccelSpeed" "0"
-     ## maps buttons to each over, button numbers
-     ## can be obtained from "xinput list <id>"
-     Option "ButtonMapping" "1 0 3 0 0 0 0 2 0"
-     ## skips pixels to move faster
-     # Option "TransformationMatrix" "2.4 0 0 0 2.4 0 0 0 1"
+```conf
+# https://wiki.archlinux.org/title/Logitech_Marble_Mouse#Configuration_file
+# https://help.ubuntu.com/community/Logitech_Marblemouse_USB
+# https://bbs.archlinux.org/viewtopic.php?id=261138
+# path - /etc/X11/xorg.conf.d/40-trackball.conf
+Section "InputClass"
+  Identifier   "Marble Mouse"
+  MatchProduct "Logitech USB Trackball"
+  Driver       "libinput"
+  Option       "ScrollMethod"     "button"
+  Option       "ScrollButton"     "1"
+  Option       "MiddleEmulation"  "true"
+  Option       "ButtonMapping"    "3 2 1 4 5 6 7 9 8"
+  Option       "NaturalScrolling" "true"
 EndSection
 ```
