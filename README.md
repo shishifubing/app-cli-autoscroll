@@ -1,5 +1,3 @@
-[TOC]
-
 # Information
 
 Enables universal autoscroll.
@@ -10,38 +8,78 @@ Pretty pointless since on Linux you can achieve it using config files
 Supports only mouse buttons.
 
 ## Usage
-You can pass file contents as arguments using '@path' syntax, every argument in that case should begin on the new line.
+You can pass file contents as arguments using `@path` syntax, every argument in
+that case should begin on the new line.
 
-If you want to dynamically pass arguments without restarting the process you can use '--config' options for it.
+If you want to dynamically pass arguments without restarting the process you can use `--config` options for it.
 
-Once you press '--buttons-start', you can scroll vertically or horizontally just by moving your mouse untill you press '--buttons-end'.
+Once you press `--buttons-start`, you can scroll vertically and horizontally just by moving your mouse untill you press `--buttons-end`.
 
-If '--buttons-hold' is set, the srolling ends once you release '--buttons-start'.
+If `--buttons-hold` is set, the srolling ends once you release `--buttons-start`.
 
-You can change arguments on runtime by enabling a config file, you can do so by setting '--config-enable' and '--config-path'.
+You can change arguments on runtime by enabling a config file, you can do so by setting `--config-enable` and `--config-path`.
 
-By default, an icon is shown once the scrolling starts, you can disable it by setting '--icon-disable'.
+By default, an icon is shown once the scrolling starts, you can disable it by setting `--icon-disable`.
 
-Once '--buttons-start' is pressed, the scroll thread starts looping. Every loop consists of sleeping for an interval, then scrolling for either 0, 1, or -1 pixels on both axis towards the starting point.
+Once `--buttons-start` is pressed, the scroll thread starts looping. Every loop consists of sleeping for an interval, then scrolling for either 0, 1, or -1 pixels on both axis towards the starting point.
 
-Starting point is the point where '--buttons-start' was pressed.
+Starting point is the point where `--buttons-start` was pressed.
 
 Sleep interval is recalculated on every mouse move as such:
+```
+100 / (--scrolling-acceleration * max(distance) + --scrolling-speed)
+```
 
-    100 / ('--scrolling-acceleration' * max(distance) + '--scrolling-speed')
-
-If '--scrolling-acceleration' is not 0, the speed of scrolling will be faster
-
+If `--scrolling-acceleration` is not 0, the speed of scrolling will be faster
 the farther away you are from the starting point.
 
-If '--scrolling-acceleration' is 0, the speed of the scrolling will be constant.
+If `--scrolling-acceleration` is 0, the speed of the scrolling will be constant.
 
 ### environment
 
+```
 python3 -m venv venv
 . venv/bin/activate
 pip install -r requirements.txt
 python linux-autoscroll.main
+```
+
+### examples
+
+#### start
+```
+python3 -m autoscroll.main --buttons-start 1 --debug-click --icon_disable
+```
+
+#### start with the configuration file passed once
+
+```python
+python3 -m autoscroll.main @config.txt
+```
+If config.txt is defined like this, its contents will be used as command line arguments - they will be loaded only once.
+Every argument should start on the new line.
+For example,
+```
+--buttons-start
+1
+--buttons-hold
+--debug_click
+```
+
+#### start with the process listening to the changes in the configuration file
+
+```python
+python3 -m autoscroll.main --config-enable --config-path config.txt
+```
+If config.txt is defined like this, the process will listen for changes in that
+file and update itself.
+Arguments in that case can be placed wherever - on one line, on several lines
+It checks the file for changes every `--config-interval`.
+For example:
+```
+--buttons-start 1 --buttons-hold
+--debug_click
+```
 
 ### --help output
 
@@ -141,42 +179,6 @@ debug:
   -ds, --debug-scroll   if set, scroll info will be printed to stdout
 ```
 
-### examples
-
-#### start
-```
-python3 -m autoscroll.main --buttons-start 1 --debug-click --icon_disable
-```
-
-#### start with the configuration file passed once
-
-```python
-python3 -m autoscroll.main @config.txt
-```
-If config.txt is defined like this, its contents will be used as command line arguments - they will be loaded only once.
-Every argument should start on the new line.
-For example,
-```
---buttons-start
-1
---buttons-hold
---debug_click
-```
-
-#### start with the process listening to the changes in the configuration file
-
-```python
-python3 -m autoscroll.main --config-enable --config-path config.txt
-```
-If config.txt is defined like this, the process will listen for changes in that
-file and update itself.
-Arguments in that case can be placed wherever - on one line, on several lines
-It checks the file for changes every `--config-interval`.
-For example:
-```
---buttons-start 1 --buttons-hold
---debug_click
-```
 
 ## xorg-server config example
 
