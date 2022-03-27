@@ -13,7 +13,7 @@ The package requires `pynput` to work, to display an icon you need to install `p
 pip install autoscroll pyside6
 ```
 
-built-in image: <img src="https://raw.githubusercontent.com/kongrentian/autoscroll/master/autoscroll/resources/img/icon.svg" width="150" height="150">
+built-in icon: <img src="https://raw.githubusercontent.com/kongrentian/autoscroll/master/autoscroll/resources/img/icon.svg" width="50" height="50">
 
 ## Usage
 
