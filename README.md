@@ -108,7 +108,7 @@ The package requires 'pynput' to work, to display an icon you need to install 'p
 
 'pip install autoscroll pyside6'
 
-By default, an icon is disabled, to enable it pass '--icon-enable'.
+By default, the icon is disabled, to enable it pass '--icon-enable'.
 
 You can pass file contents as command line arguments using '@path/to/the/file' syntax.
 
