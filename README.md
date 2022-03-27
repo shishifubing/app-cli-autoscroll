@@ -13,7 +13,7 @@ The package requires `pynput` to work, to display an icon you need to install `p
 pip install autoscroll pyside6
 ```
 
-![built-in icon](/autoscroll/autoscroll/resources/img/icon.svg?raw=true "built-in icon`")
+![built-in icon](/autoscroll/resources/img/icon.svg?raw=true "built-in icon`")
 
 ## Usage
 
