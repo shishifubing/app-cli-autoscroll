@@ -84,7 +84,7 @@ def get_resource_path(resource: str = None) -> str:
         addition = f'.{addition}' if addition else ''
         file = split[-1]
         file = file if file != addition else ''
-    return str(importlib_path(f'linux-xorg-autoscroll{addition}', file))
+    return str(importlib_path(f'autoscroll{addition}', file))
 
 
 def get_resource_content(resource: str) -> str:

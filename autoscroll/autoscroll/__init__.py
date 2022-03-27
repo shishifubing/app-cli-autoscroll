@@ -1,3 +1,4 @@
 from .autoscroll import Autoscroll
 from .constants import *
-from .functions import raise_type_error
+from .qt import QApplication, Icon
+from .functions import get_path

@@ -1,5 +1,4 @@
-from argparse import ArgumentParser
-
+from sys import argv as sys_argv
 from threading import Event
 from time import sleep
 from pynput.mouse import Button, Controller, Listener
@@ -12,8 +11,9 @@ from .constants import (
     CONFIG_PATH,
     CONFIG_INTERVAL,
     COORDINATE_NAME,
-    DEBUG_ARGUMENTS,
     DEBUG_CLICK,
+    DEBUG_FILE,
+    DEBUG_INITIAL,
     DEBUG_PADDING,
     DEBUG_SCROLL,
     ICON_ENABLE,
@@ -34,8 +34,8 @@ from os import stat as os_stat
 
 class Base:
 
-    repr_keys_ignore = []
-    repr_keys_only = []
+    debug_keys_ignore = []
+    debug_keys_only = []
 
     def update(self, *args, **kwargs) -> None: ...
 
@@ -43,37 +43,8 @@ class Base:
 
     def __init__(self, *args, **kwargs) -> None: self.update(*args, **kwargs)
 
-    def _repr_key_is_valid(self, name: str) -> bool:
-        if self.repr_keys_only:
-            return name in self.repr_keys_only
-        return name not in self.repr_keys_ignore
-
-    def __repr__(self) -> str:
-        name = self.name if hasattr(self, 'name') else type(self).__name__
-        raise_type_error(name, str)
-        debug = []
-        not_base = {}
-        for key, value in self.json().items():
-            if not self._repr_key_is_valid(key):
-                continue
-            if isinstance(value, Base):
-                debug.append(str(value))
-                continue
-            not_base[key] = value if isinstance(value, str) else str(value)
-        if not_base:
-            debug.append(self._construct_debug(name.capitalize(), **not_base))
-        return '\n'.join(debug)
-
-    def __str__(self) -> str: return self.__repr__()
-
     def _set_if_nonexistent(self, name: str, value: Any) -> None:
         return None if hasattr(self, name) else setattr(self, name, value)
-
-    def _construct_debug(self, _header: str, *args, **kwargs) -> str:
-        result = ', '.join([item for item in args] +
-                           [f'{name} - {value}'
-                           for name, value in kwargs.items()])
-        return _header.ljust(DEBUG_PADDING, ' ') + result
 
     @staticmethod
     def _convert_callable(value: Any) -> Any: return value
@@ -125,11 +96,46 @@ class Base:
         while condition(**condition_getter(**condition_parameters)):
             action(**action_getter(**action_parameters))
 
-    def _print(self, header: str, do_print: bool = True) -> str:
-        result = f'\n[{header}]\n{self}'
+    def _print(self, header: str, do_print: bool = True,
+               keys_only: List[str] = None,
+               keys_ignore: List[str] = None) -> str:
+        result = f'\n[{header}]\n{self._debug(keys_only, keys_ignore)}'
         if do_print:
             print(result)
         return result
+
+    def __repr__(self) -> str: return self._debug()
+
+    def __str__(self) -> str: return self._debug()
+
+    def _debug(self, keys_only: List[str] = None,
+               keys_ignore: List[str] = None) -> str:
+        name = self.name if hasattr(self, 'name') else type(self).__name__
+        raise_type_error(name, str)
+        debug = []
+        not_base = {}
+        for key, value in self.json().items():
+            if not self._debug_key_is_valid(key, keys_only, keys_ignore):
+                continue
+            if isinstance(value, Base):
+                debug.append(str(value))
+                continue
+            not_base[key] = value if isinstance(value, str) else str(value)
+        if not_base:
+            debug.append(self._construct_debug(name.capitalize(), **not_base))
+        return '\n'.join(debug)
+
+    def _debug_key_is_valid(self, name: str, keys_only: List[str] = None,
+                            keys_ignore: List[str] = None) -> bool:
+        only = self.debug_keys_only if keys_only is None else keys_only
+        ignore = self.debug_keys_ignore if keys_ignore is None else keys_ignore
+        return name in only if only else name not in ignore
+
+    def _construct_debug(self, _header: str, *args, **kwargs) -> str:
+        result = ', '.join([item for item in args] +
+                           [f'{name} - {value}'
+                           for name, value in kwargs.items()])
+        return _header.ljust(DEBUG_PADDING, ' ') + result
 
 
 class Coordinate(Base):
@@ -346,9 +352,9 @@ class Scrolling(Base):
         self.event_ended: Event = Event()
 
         self.coordinates: Coordinates = Coordinates()
-        self.coordinates.repr_keys_ignore = ['direction']
+        self.coordinates.debug_keys_ignore = ['direction']
         self.direction: Coordinates = Coordinates(name='direction')
-        self.direction.repr_keys_only = ['direction']
+        self.direction.debug_keys_only = ['direction']
 
         self.update(*args, **kwargs)
 
@@ -439,11 +445,17 @@ class Scrolling(Base):
 
 class Icon(Base):
 
+    def __init__(self, *args, **kwargs) -> None:
+        self.application = None
+        self.event_icon_enabled: Event = Event()
+        self.event_qt_application_started: Event = Event()
+        self.update(*args, **kwargs)
+
     def update(self, enable: Union[str, bool] = None,
                path: str = None, size: Union[str, int] = None) -> None:
         self.path: str = path
         self.size: int = size
-        self.enable: bool = True if self.path or self.size else enable
+        self.enable: bool = enable
         self.icon: Union[None, object] = self.path, self.size
 
     def show(self, x: int, y: int) -> None:
@@ -453,6 +465,13 @@ class Icon(Base):
 
     def json(self) -> Dict[str, Any]:
         return {'enable': self.enable, 'path': self.path, 'size': self.size}
+
+    def start_qt_when_icon_is_enabled(self) -> None:
+        print('here')
+        self.event_icon_enabled.wait()
+        self.application = self._get_qt(True)
+        self.event_qt_application_started.set()
+        self.application.exec()
 
     @property
     def path(self) -> str: return self._path
@@ -483,25 +502,35 @@ class Icon(Base):
         if not self.enable:
             self._icon = None
             return
+        self.event_icon_enabled.set()
+        self.event_qt_application_started.wait()
+        value = check_iterable(value)
+        if hasattr(self, '_icon') and self.icon is not None:
+            self.icon.update_icon(*value)
+            return
+        self._icon = self._get_qt()(*value)
+        self.application.setActiveWindow(self.icon)
+
+    def _get_qt(self, get_application: bool = False) -> object:
         try:
-            from .qt5_stuff import Icon as qt_icon
+            from .qt import Icon as qt_icon, application
         except ImportError as exception:
             raise ValueError(ICON_ERROR) from exception
-
-        self._icon = qt_icon(*check_iterable(value))
+        return application if get_application else qt_icon
 
 
 class Debug(Base):
 
-    def update(self, scroll: bool = None,
-               click: bool = None, arguments: bool = None) -> None:
+    def update(self, scroll: bool = None, file: bool = None,
+               click: bool = None, initial: bool = None) -> None:
         self.scroll: bool = scroll
         self.click: bool = click
-        self.arguments: bool = arguments
+        self.initial: bool = initial
+        self.file: bool = file
 
     def json(self) -> Dict[str, Any]:
         return {'scroll': self.scroll, 'click': self.click,
-                'arguments': self.arguments}
+                'initial': self.initial, 'file': self.file}
 
     @property
     def scroll(self) -> bool: return self._scroll
@@ -510,7 +539,10 @@ class Debug(Base):
     def click(self) -> bool: return self._click
 
     @property
-    def arguments(self) -> bool: return self._arguments
+    def initial(self) -> bool: return self._initial
+
+    @property
+    def file(self) -> bool: return self._file
 
     @scroll.setter
     def scroll(self, value: bool) -> None:
@@ -520,18 +552,22 @@ class Debug(Base):
     def click(self, value: bool) -> None:
         self._set('_click', DEBUG_CLICK, value, (str, bool), convert_bool)
 
-    @arguments.setter
-    def arguments(self, value: bool) -> None:
-        self._set('_arguments', DEBUG_ARGUMENTS,
-                  value, (str, bool), convert_bool)
+    @initial.setter
+    def initial(self, value: bool) -> None:
+        self._set('_initial', DEBUG_INITIAL, value, (str, bool), convert_bool)
+
+    @file.setter
+    def file(self, value: bool) -> None:
+        self._set('_file', DEBUG_FILE, value, (str, bool), convert_bool)
 
 
 class Config(Base):
 
+    debug_keys_ignore = 'content'
+
     def __init__(self, *args, **kwargs) -> None:
-        self.event_end: Event = Event()
-        self.event_enabled: Event = Event()
-        self.stamp: int = 0
+        self._stamp: int = 0
+        self._parse_config_file_content: Dict[str, Any] = {}
         self.argument_parser: ArgparseParser = ArgparseParser(
             **PARSER_INITIALIZER).add_arguments(**ARGUMENTS)
         self.update(*args, **kwargs)
@@ -548,6 +584,10 @@ class Config(Base):
         return self._parse(value.split())
 
     def parse_config_file(self) -> Dict[str, Any]:
+        self._parse_config_file_content = self._parse_config_file()
+        return self._parse_config_file_content
+
+    def _parse_config_file(self) -> Dict[str, Any]:
         if not self._has_file_changed():
             return {}
         with open(self.path, 'r') as config_file:
@@ -556,39 +596,31 @@ class Config(Base):
         return result
 
     def _parse(self, *args, **kwargs) -> Dict[str, Any]:
-        return parse_arguments(
-            vars(self.argument_parser.parse_args(*args, **kwargs)))
-
-    def _check(self) -> None:
-        if not self._has_file_changed():
-            return {}
+        return parse_arguments(**vars(
+            self.argument_parser.parse_args(*args, **kwargs)))
 
     def _has_file_changed(self) -> bool:
         stamp = os_stat(self.path).st_mtime
-        if stamp == self.stamp:
+        if stamp == self._stamp:
             return False
-        self.stamp = stamp
+        self._stamp = stamp
         return True
 
-    @ property
+    @property
     def enable(self) -> bool: return self._enable
 
-    @ property
+    @property
     def path(self) -> str: return self._path
 
     @property
     def interval(self) -> int: return self._interval
 
-    @ enable.setter
+    @enable.setter
     def enable(self, value: Union[bool, str]) -> None:
         self._set('_enable', CONFIG_ENABLE, value, (bool, str), convert_bool)
         if self._enable and not self.path:
             self._enable = False
             raise ValueError(f'{CONFIG_ERROR_ENABLE}, path - {self.path}')
-        if value:
-            self.event_enabled.set()
-        if not value and value is not None:
-            self.event_enabled.clear()
 
     @interval.setter
     def interval(self, value: Union[str, int]) -> None:
@@ -599,4 +631,6 @@ class Config(Base):
         self._set('_path', CONFIG_PATH, value, str)
 
     def json(self) -> Dict[str, Any]:
-        return {'path': self.path, 'enable': self.enable}
+        return {'path': self.path, 'enable': self.enable,
+                'interval': self.interval,
+                'content': self._parse_config_file_content}

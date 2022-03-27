@@ -5,9 +5,9 @@ from typing import Any, Dict
 def parse_arguments(**arguments: Any) -> Dict[str, Any]:
     result = {}
     for key, value in arguments.items():
-        key_split = key.split('-')
+        key_split = key.split('_')
         group = key_split[0]
-        name = ''.join(key_split[1:]).replace('-', '_')
+        name = '_'.join(key_split[1:])
         if group not in result:
             result[group] = {}
         result[group][name] = value
@@ -37,36 +37,35 @@ class ArgparseFormatter(HelpFormatter):
     def _format_action_invocation(self, action):
         if not action.option_strings:
             return self._metavar_formatter(action, action.dest)(1)[0]
-        parts = action.option_strings.copy()
         # option takes no arguments -> -s, --long
         # option takes arguments:
         #    default output -> -s ARGS, --long ARGS
         #    changed output -> -s, --long type
-        if action.nargs != 0:
-            parts[-1] += f' {action.type.__name__}'
-        return ', '.join(parts)
+        return ', '.join(action.option_strings) + (f' {action.type.__name__}'
+                                                   if action.nargs != 0 else '')
 
     # add default value to the end
     # built-in argparse class argparse.ArgumentDefaultsHelpFormatter
-    def _get_help_string(self, action):
-        if action.nargs == 0 or action.default is SUPPRESS or not action.default:
-            return action.help
-        return f'{action.help}\n[default: %(default)s]'
+    # def _get_help_string(self, action):
+    #    if action.nargs == 0 or action.default is SUPPRESS or not action.default:
+    #        return action.help
+    #    return f'{action.help}\n[default: %(default)s]'
 
 
 class _ArgparseArgumentGroup(_ArgumentGroup):
 
-    def add_arguments(self, **arguments: Dict[str, Dict[str, Any]]
-                      ) -> '_ArgparseArgumentGroup':
+    def add_arguments(self,
+                      **arguments: Dict[str, Any]) -> '_ArgparseArgumentGroup':
+        group = self.title.split()[0].lower()
         for name, kwargs in arguments.items():
-            flags = f'-{self.title[0]}{name[0]}', f'--{self.title}-{name}'
+            flags = f'-{group[0]}{name[0]}', f'--{group}-{name}'
             self.add_argument(*flags, **kwargs)
         return self
 
 
 class ArgparseParser(ArgumentParser):
 
-    # overloading
+    # overriding
     def add_argument_group(self, *args,
                            parameters: Dict[str, Dict[str, Any]] = None,
                            **kwargs):
@@ -79,5 +78,7 @@ class ArgparseParser(ArgumentParser):
     # add a bunch of arguments and argument groups in one go
     def add_arguments(self, **groups: Dict[str, Any]) -> 'ArgparseParser':
         for name, parameters in groups.items():
-            self.add_argument_group(title=name, **parameters)
+            self.add_argument_group(title=name,
+                                    description='',
+                                    parameters=parameters)
         return self

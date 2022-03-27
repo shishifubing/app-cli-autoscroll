@@ -3,7 +3,7 @@
 Enables universal autoscroll.
 
 Pretty pointless since on Linux you can achieve it using config files
-(see [the example](#xorg-server-config-example) and for Windows there are usually drivers.
+(see [the example](#xorg-server-config-example)) and for Windows there are usually drivers.
 
 Supports only mouse buttons.
 
@@ -85,7 +85,7 @@ For example:
 
 ```
 usage: linux-xorg-autoscroll [-h] [-ss SCROLLING_SPEED] [-sd SCROLLING_DEAD_AREA]
-                             [-sa SCROLLING_ACCELERATION] [-bh] [-bs BUTTONS_START] [-be BUTTONS_END]
+                             [-sa SCROLLING_ACCELERATION] [-bh] [-bs BUTTON_START] [-be BUTTON_END]
                              [-ce] [-cp CONFIG_PATH] [-ci CONFIG_INTERVAL] [-id] [-ip ICON_PATH]
                              [-is ICON_SIZE] [-dc] [-ds]
 
@@ -94,6 +94,11 @@ Enables universal autoscroll.
 Pretty pointless since on Linux you can achieve it using config files and for Windows there are usually drivers.
 
 Supports only mouse buttons.
+
+You can pass file contents as arguments using '@path' syntax, every argument in that case should begin on the new line.
+
+If you want to dynamically pass arguments without restarting the process you can use '--config' options for it.
+
 Once you press '--buttons-start', you can scroll vertically or horizontally just by moving your mouse untill you press '--buttons-end'.
 
 If '--buttons-hold' is set, the srolling ends once you release '--buttons-start'.
@@ -119,8 +124,7 @@ If '--scrolling-acceleration' is 0, the speed of the scrolling will be constant.
 options:
   -h, --help            show this help message and exit
 
-scrolling:
-  Scrolling options
+scrolling options:
 
   -ss, --scrolling-speed int
                         constant part of the scrolling speed
@@ -134,23 +138,17 @@ scrolling:
                         where the scrolling started, can be set to 0
                         [default: 10]
 
-buttons:
-  Button options
+button options:
 
-  Once --buttons-start is pressed, the scrolling starts, when --buttons-end is pressed, it ends
-
-  -bh, --buttons-hold   if set, the scrolling will end once you release --buttons-start
-  -bs, --buttons-start int
+  -bh, --button-hold    if set, the scrolling will end once you release --buttons-start
+  -bs, --button-start int
                         button that starts the scrolling
                         [default: 2]
-  -be, --buttons-end int
+  -be, --button-end int
                         button that ends the scrolling
                         [default: --buttons-start]
 
-config:
-  Configuration file options
-
-  It allows to load arguments on runtime
+config options:
 
   -ce, --config-enable  if set, arguments from the configuration file on --config-path will be loaded
                         every --config-interval
@@ -161,10 +159,7 @@ config:
                         how often the config file should be checked for changes, in seconds
                         [default: 5]
 
-icon:
-  Scrolling icon options
-
-  By default, an icon is displayed when the scrolling is active
+icon options:
 
   -id, --icon-disable   if set, the icon will be disabled
   -ip, --icon-path str  path to the icon
@@ -172,8 +167,7 @@ icon:
   -is, --icon-size int  size of the icon, in pixels
                         [default: 30]
 
-debug:
-  Debug options
+debug options:
 
   -dc, --debug-click    if set, click info will be printed to stdout
   -ds, --debug-scroll   if set, scroll info will be printed to stdout

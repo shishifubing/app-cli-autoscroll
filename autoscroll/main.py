@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 
-from PyQt5.QtWidgets import QApplication
 from sys import exit as sys_exit, argv as sys_argv
-from .autoscroll import Autoscroll
+from .autoscroll import Autoscroll, QApplication, Icon, get_path
 
 
-def main() -> int:
-    app = QApplication(sys_argv)
-    app.setQuitOnLastWindowClosed(False)
-    Autoscroll().start(parse_argv=True)
-    return app.exec()
+def start() -> None:
+
+    scroll = Autoscroll()
+    scroll.start(parse_argv=True)
+    # application.setActiveWindow(scroll.icon.icon)
+    #icon = Icon('resources/img/white.svg', 100)
+    # application.setActiveWindow(icon)
+    #icon.show(400, 400)
+    return
 
 
 if __name__ == '__main__':
-    sys_exit(main())
+    sys_exit(start())
