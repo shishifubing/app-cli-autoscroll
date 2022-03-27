@@ -4,11 +4,11 @@ Pretty pointless since on Linux you can achieve it using config files and for Wi
 
 Supports only mouse buttons.
 
-The package requires 'pynput' to work, to display an icon you need to install 'pyside6'.
+The package requires 'pynput' to work, to display an icon you need to install 'pyside6' ('qt6' package).
 
 'pip install autoscroll pyside6'
 
-By default, an icon is disabled, to enable it pass '--icon-enable'.
+By default, the icon is disabled, to enable it pass '--icon-enable'.
 
 You can pass file contents as command line arguments using '@path/to/the/file' syntax.
 Arguments in that case can be placed wherever - on one line, on several lines.

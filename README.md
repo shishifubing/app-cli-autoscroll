@@ -7,17 +7,17 @@ Pretty pointless since on Linux you can achieve it using config files
 
 Supports only mouse buttons.
 
-The package requires `pynput` to work, to display an icon you need to install `pyside6`.
+The package requires `pynput` to work, to display an icon you need to install `pyside6` (`qt6` package).
 
 ```bash
 pip install autoscroll pyside6
 ```
 
-![built-in icon](/autoscroll/resources/img/icon.svg?raw=true "built-in icon`")
+built-in image: <img src="https://raw.githubusercontent.com/kongrentian/autoscroll/master/autoscroll/resources/img/icon.svg" width="150" height="150">
 
 ## Usage
 
-By default, an icon is disabled, to enable it pass `--icon-enable`.
+By default, the icon is disabled, to enable it pass `--icon-enable`.
 
 You can pass file contents as command line arguments using `@path/to/the/file` syntax.
 Arguments in that case can be placed wherever - on one line, on several lines.
