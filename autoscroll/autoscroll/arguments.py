@@ -1,5 +1,5 @@
 from argparse import SUPPRESS, HelpFormatter, ArgumentParser, _ArgumentGroup
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 
 def parse_arguments(**arguments: Any) -> Dict[str, Any]:
@@ -65,7 +65,7 @@ class _ArgparseArgumentGroup(_ArgumentGroup):
 
 class ArgparseParser(ArgumentParser):
 
-    # overriding
+    # override
     def add_argument_group(self, *args,
                            parameters: Dict[str, Dict[str, Any]] = None,
                            **kwargs):
@@ -82,3 +82,9 @@ class ArgparseParser(ArgumentParser):
                                     description='',
                                     parameters=parameters)
         return self
+
+    # change how '@' files are parsed
+    # allows to have several arguments on one line
+    # https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.convert_arg_line_to_args
+    def convert_arg_line_to_args(self, arg_line: str) -> List[str]:
+        return arg_line.split()

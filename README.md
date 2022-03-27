@@ -37,18 +37,26 @@ If `--scrolling-acceleration` is 0, the speed of the scrolling will be constant.
 
 ### environment
 
+requirements:
+```
+pynput
+pyside6
+```
+`pyside6` is a `Qt` library, if you would rather avoid downloading it, you can
+set `--icon-disable`, in that case icon will not be displayed.
+
 ```
 python3 -m venv venv
 . venv/bin/activate
 pip install -r requirements.txt
-python linux-autoscroll.main
+python -m autoscroll.main
 ```
 
 ### examples
 
 #### start
 ```
-python3 -m autoscroll.main --buttons-start 1 --debug-click --icon_disable
+python3 -m autoscroll.main --buttons-start 1 --debug-click --icon-disable
 ```
 
 #### start with the configuration file passed once
@@ -57,13 +65,11 @@ python3 -m autoscroll.main --buttons-start 1 --debug-click --icon_disable
 python3 -m autoscroll.main @config.txt
 ```
 If config.txt is defined like this, its contents will be used as command line arguments - they will be loaded only once.
-Every argument should start on the new line.
+Arguments can be placed wherever - on one line, on several lines.
 For example,
 ```
---buttons-start
-1
---buttons-hold
---debug_click
+--buttons-start 1
+--buttons-hold --debug_click
 ```
 
 #### start with the process listening to the changes in the configuration file
@@ -73,7 +79,7 @@ python3 -m autoscroll.main --config-enable --config-path config.txt
 ```
 If config.txt is defined like this, the process will listen for changes in that
 file and update itself.
-Arguments in that case can be placed wherever - on one line, on several lines
+Arguments can be placed wherever - on one line, on several lines
 It checks the file for changes every `--config-interval`.
 For example:
 ```

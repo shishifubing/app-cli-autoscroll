@@ -35,18 +35,22 @@ class Autoscroll(Base):
                                     daemon=True)
 
     def start(self, parse_argv: bool = False) -> None:
-        # update from the command line
-        self.update(**self.config.parse_argv() if parse_argv else {})
+        # update from command line
+        # it is a thread because in order to create an icon widget,
+        # a qt application has has to be running
+        # (qt applications have to run in the main thread)
+        Thread(target=self.update,
+               kwargs=self.config.parse_argv() if parse_argv else {}).start()
         # start listening for mouse movements and clicks
         self.thread_scroll_listener.start()
         # start the scrolling loop
         self.thread_scroll_action.start()
+        # update from the command line
         # start listening for changes in the config file (if enabled)
         if self.config.enable:
             self.thread_config.start()
         # debug
         self._print('initial', self.debug.initial)
-        # a Qt application has to be in the main thread
         # if the icon is not enabled, the main thread just waits
         self.icon.start_qt_when_icon_is_enabled()
 
@@ -76,11 +80,13 @@ class Autoscroll(Base):
         # send information about which button was pressed/released
         self.buttons.press(button, pressed)
 
-        if not self.scrolling.is_scrolling() and self.buttons.was_start_pressed():
+        if (not self.scrolling.is_scrolling()
+                and self.buttons.was_start_pressed()):
             self.scrolling.set_initial_coordinates(x, y)
             self.icon.show(x, y)
             self.scrolling.start()
-        elif self.buttons.was_end_pressed() or self.buttons.was_start_released():
+        elif (self.buttons.was_end_pressed()
+              or self.buttons.was_start_released_with_hold()):
             self.scrolling.stop()
             self.icon.close()
 

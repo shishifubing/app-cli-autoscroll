@@ -305,6 +305,9 @@ class Buttons(Base):
     def was_start_released(self) -> bool:
         return self.was_action() and self.is_start() and not self.is_pressed
 
+    def was_start_released_with_hold(self) -> bool:
+        return self.was_start_released() and self.hold
+
     def was_end_released(self) -> bool:
         return self.was_action() and self.is_end() and not self.is_pressed
 
@@ -467,7 +470,6 @@ class Icon(Base):
         return {'enable': self.enable, 'path': self.path, 'size': self.size}
 
     def start_qt_when_icon_is_enabled(self) -> None:
-        print('here')
         self.event_icon_enabled.wait()
         self.application = self._get_qt(True)
         self.event_qt_application_started.set()

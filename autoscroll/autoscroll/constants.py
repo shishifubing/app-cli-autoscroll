@@ -14,7 +14,9 @@ BUTTONS_HOLD: bool = False
 ICON_ENABLE: bool = False
 ICON_SIZE: int = 30
 ICON_PATH: str = 'resources/img/icon.svg'
-ICON_ERROR: str = 'you enabled the icon ("enable" is "True") but the qt6 package is not installed'
+ICON_ERROR: str = ('icon is enabled (it is enabled by default), but the '
+                   '\'pyside6\' package is not installed. '
+                   'use \'--icon-disable\' or install the package')
 
 CONFIG_PATH: str = f'{os_environ.get("HOME")}/.config/autoscroll/config.txt'
 CONFIG_ENABLE: bool = False

@@ -1,7 +1,6 @@
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import Qt, Signal
-from pynput.mouse import Button
+from PySide6.QtCore import Qt
 from sys import argv as sys_argv
 from .functions import get_path
 
