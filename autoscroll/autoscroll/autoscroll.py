@@ -88,7 +88,7 @@ class Autoscroll(Base):
         elif (self.buttons.was_end_pressed()
               or self.buttons.was_start_released_with_hold()):
             self.scrolling.stop()
-            self.icon.close()
+            self.icon.hide()
 
         # it should be placed at the end to avoid initial scroll jumps
         self.scrolling.set_direction_and_coordinates(x, y)

@@ -14,9 +14,10 @@ BUTTONS_HOLD: bool = False
 ICON_ENABLE: bool = False
 ICON_SIZE: int = 30
 ICON_PATH: str = 'resources/img/icon.svg'
-ICON_ERROR: str = ('icon is enabled (it is enabled by default), but the '
+ICON_ERROR: str = ('icon is enabled (it is disabled by default), but the '
                    '\'pyside6\' package is not installed. '
-                   'use \'--icon-disable\' or install the package')
+                   'remove \'--icon-enable\' or install the package\n'
+                   '\npip install pyside6\n')
 
 CONFIG_PATH: str = f'{os_environ.get("HOME")}/.config/autoscroll/config.txt'
 CONFIG_ENABLE: bool = False
@@ -96,10 +97,10 @@ ARGUMENTS: Dict[str, Any] = {
         }
     },
     'icon': {
-        'disable': {
-            'action': 'store_false',
-            'dest': 'icon_enable',
-            'help': 'if set, the icon will be disabled'
+        'enable': {
+            'action': 'store_const',
+            'const': True,
+            'help': 'if set, the icon will be enabled'
         },
         'path': {
             'type': str,

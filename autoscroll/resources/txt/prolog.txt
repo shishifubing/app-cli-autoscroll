@@ -4,7 +4,14 @@ Pretty pointless since on Linux you can achieve it using config files and for Wi
 
 Supports only mouse buttons.
 
-You can pass file contents as arguments using '@path' syntax, every argument in that case should begin on the new line.
+The package requires 'pynput' to work, to display an icon you need to install 'pyside6'.
+
+'pip install autoscroll pyside6'
+
+By default, an icon is disabled, to enable it pass '--icon-enable'.
+
+You can pass file contents as command line arguments using '@path/to/the/file' syntax.
+Arguments in that case can be placed wherever - on one line, on several lines.
 
 If you want to dynamically pass arguments without restarting the process you can use '--config' options for it.
 
@@ -12,11 +19,10 @@ Once you press '--buttons-start', you can scroll vertically or horizontally just
 
 If '--buttons-hold' is set, the srolling ends once you release '--buttons-start'.
 
-You can change arguments on runtime by enabling a config file, you can do so by setting '--config-enable' and '--config-path'.
+You can change arguments on runtime by enabling a config file, you can do so by passing '--config-enable'.
 
-By default, an icon is shown once the scrolling starts, you can disable it by setting '--icon-disable'.
-
-Once '--buttons-start' is pressed, the scroll thread starts looping. Every loop consists of sleeping for an interval, then scrolling for either 0, 1, or -1 pixels on both axis towards the starting point.
+Once '--buttons-start' is pressed, the scroll thread starts looping.
+Every loop consists of sleeping for an interval, then scrolling for either 0, 1, or -1 pixels on both axis towards the starting point.
 Starting point is the point where '--buttons-start' was pressed.
 Sleep interval is recalculated on every mouse move as such:
     100 / ('--scrolling-acceleration' * max(distance) + '--scrolling-speed')

@@ -464,7 +464,7 @@ class Icon(Base):
     def show(self, x: int, y: int) -> None:
         return self.icon.show(x, y) if self.enable else None
 
-    def close(self) -> None: return self.icon.close() if self.enable else None
+    def hide(self) -> None: return self.icon.hide() if self.enable else None
 
     def json(self) -> Dict[str, Any]:
         return {'enable': self.enable, 'path': self.path, 'size': self.size}

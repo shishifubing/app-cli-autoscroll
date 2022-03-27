@@ -22,16 +22,13 @@ setup(
     author_email='causelesscause@gmail.com',
     license='GNU General Public License v3.0',
     classifiers=[
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
-    ],
+        'Programming Language :: Python :: 3.6',
+        'OS Independent'],
     packages=find_packages(where='.', include='autoscroll'),
     include_package_data=True,
-    install_requires=['pynput', 'pyside6'],
-    entry_points={
-        'console_scripts': [
-            'autoscroll = autoscroll.main:start',
-        ]
-    },
-)
+    install_requires=['pynput'],
+    extras_require={'icon': ['pyside6']},
+    entry_points={'console_scripts': ['autoscroll = autoscroll.main:start']},
+    python_requires='>=3.6')
