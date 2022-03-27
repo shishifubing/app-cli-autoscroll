@@ -104,7 +104,7 @@ Pretty pointless since on Linux you can achieve it using config files and for Wi
 
 Supports only mouse buttons.
 
-The installation requires 'pynput' to work, to display an icon you need to install 'pyside6'.
+The package requires 'pynput' to work, to display an icon you need to install 'pyside6' ('qt6' package).
 
 'pip install autoscroll pyside6'
 
