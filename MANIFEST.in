@@ -1,1 +1,1 @@
-recursive-include autoscroll/resources
+recursive-include autoscroll/resources *
