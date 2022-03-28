@@ -15,24 +15,22 @@ class Autoscroll(Base):
         self.debug: Debug = Debug()
         self.event_end: Event = Event()
 
-        # initial update
+        # update from initializer arguments
         self.update(*args, **kwargs)
 
         # threads
-        # listen for mouse actions
+        # mouse actions
         self.thread_scroll_listener = Listener(on_move=self._on_move,
                                                on_click=self._on_click,
                                                daemon=True)
         # scroll
-        self.thread_scroll_action = Thread(target=self._loop,
+        self.thread_scroll_action = Thread(target=self._loop, daemon=True,
                                            args=(self._is_not_end,
-                                                 self._scroll),
-                                           daemon=True)
-        # listen for changes in the config file (if enabled)
-        self.thread_config = Thread(target=self._loop,
+                                                 self._scroll))
+        # update from the config file (if enabled)
+        self.thread_config = Thread(target=self._loop, daemon=True,
                                     args=(self._is_not_end,
-                                          self._update_from_config_file),
-                                    daemon=True)
+                                          self._update_from_config_file))
 
     def start(self, parse_argv: bool = False) -> None:
         # update from the command line

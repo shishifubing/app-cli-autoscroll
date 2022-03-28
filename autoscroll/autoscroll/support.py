@@ -63,14 +63,13 @@ class Base:
         """
         converts
 
-        value is None: default
+        _value is _type and _callable is callable -> _callable(_value, **kwargs)
 
-        target_type is None or value is target_type: value
+        _value is None -> none_value
 
-        value is convert_type and convert function is callable:
-            convert_function(value)
+        _value is _type -> _callable is not callable error
 
-        raise_type_error
+        _value is not None or _type type error
         """
         if isinstance(_value, _type) and callable(_callable):
             return _callable(_value, **kwargs)
@@ -272,10 +271,9 @@ class Coordinates(Base):
 class Buttons(Base):
 
     def __init__(self, *args, **kwargs) -> None:
-        self.update(*args, **kwargs)
-
         self.button: Button = None
         self.is_pressed: bool = None
+        self.update(*args, **kwargs)
 
     def update(self, start: Union[Button, int, str] = None,
                end: Union[Button, int, str] = None,
@@ -349,15 +347,15 @@ class Scrolling(Base):
     def __init__(self, *args, **kwargs) -> None:
         self.sleep_interval: int = SCROLLING_SLEEP_INTERVAL_INITIAL
         self.controller: Controller = Controller()
-        self.event_end: Event = Event()
-        self.event_scrolling: Event = Event()
-        self.event_started: Event = Event()
-        self.event_ended: Event = Event()
-
         self.coordinates: Coordinates = Coordinates()
         self.coordinates.debug_keys_ignore = ['direction']
         self.direction: Coordinates = Coordinates(name='direction')
         self.direction.debug_keys_only = ['direction']
+
+        self.event_end: Event = Event()
+        self.event_scrolling: Event = Event()
+        self.event_started: Event = Event()
+        self.event_ended: Event = Event()
 
         self.update(*args, **kwargs)
 
@@ -498,16 +496,17 @@ class Icon(Base):
     @enable.setter
     def enable(self, value: Union[str, bool]) -> None:
         self._set('_enable', ICON_ENABLE, value, (str, bool), convert_bool)
+        if self.enable:
+            self.event_icon_enabled.set()
 
     @icon.setter
     def icon(self, value: Tuple[str, int]) -> None:
         if not self.enable:
             self._icon = None
             return
-        self.event_icon_enabled.set()
         self.event_qt_application_started.wait()
         value = check_iterable(value)
-        if hasattr(self, '_icon') and self.icon is not None:
+        if getattr(self, '_icon', None) is not None:
             self.icon.update_icon(*value)
             return
         self._icon = self._get_qt()(*value)
