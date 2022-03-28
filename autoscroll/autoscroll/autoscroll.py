@@ -38,8 +38,8 @@ class Autoscroll(Base):
         # a qt application has to be running in the main thread.
         # so, if the icon is enabled, the thread will have to wait untill the
         # qt application is running in the main thread
-        Thread(target=self.update,
-               kwargs=self.config.parse_argv() if parse_argv else {}).start()
+        Thread(target=self.update, kwargs=(self.config.parse_argv()
+                                           if parse_argv else {})).start()
         # start listening for mouse movements and clicks
         self.thread_scroll_listener.start()
         # start the scrolling loop
