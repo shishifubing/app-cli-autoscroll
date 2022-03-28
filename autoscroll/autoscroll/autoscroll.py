@@ -45,15 +45,16 @@ class Autoscroll(Base):
         # start the scrolling loop
         self.thread_scroll_action.start()
         # update from the command line
-        # start listening for changes in the config file (if enabled)
-        if self.config.enable:
-            self.thread_config.start()
+        # start listening for changes in the config file
+        self.thread_config.start()
         # debug
         self._print('initial', self.debug.initial)
         # wait untill the icon is enabled, then run a qt application
         self.icon.start_qt_when_icon_is_enabled()
 
     def _update_from_config_file(self) -> None:
+        # wait untill the config file is enabled
+        self.config.wait()
         # update from the config file
         self.update(**self.config.parse_config_file())
         # debug

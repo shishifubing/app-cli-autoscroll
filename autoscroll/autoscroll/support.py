@@ -568,6 +568,7 @@ class Config(Base):
 
     def __init__(self, *args, **kwargs) -> None:
         self._stamp: int = 0
+        self.event_enabled: Event = Event()
         self._parse_config_file_content: Dict[str, Any] = {}
         self.argument_parser: ArgparseParser = ArgparseParser(
             **PARSER_INITIALIZER).add_arguments(**ARGUMENTS)
@@ -578,6 +579,8 @@ class Config(Base):
         self.path: str = path
         self.enable: bool = enable
         self.interval: int = interval
+
+    def wait(self) -> None: self.event_enabled.wait()
 
     def parse_argv(self) -> Dict[str, Any]: return self._parse()
 
@@ -619,9 +622,11 @@ class Config(Base):
     @enable.setter
     def enable(self, value: Union[bool, str]) -> None:
         self._set('_enable', CONFIG_ENABLE, value, (bool, str), convert_bool)
-        if self._enable and not self.path:
-            self._enable = False
+        if self.enable and not self.path:
+            self.enable = False
             raise ValueError(f'{CONFIG_ERROR_ENABLE}, path - {self.path}')
+        if self.enable and not self.event_enabled.is_set():
+            self.event_enabled.set()
 
     @interval.setter
     def interval(self, value: Union[str, int]) -> None:
