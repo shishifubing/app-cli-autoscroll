@@ -19,7 +19,7 @@ class Autoscroll(Base):
         self.update(*args, **kwargs)
 
         # threads
-        # listen for mouse actions and update information accordingly
+        # listen for mouse actions
         self.thread_scroll_listener = Listener(on_move=self._on_move,
                                                on_click=self._on_click,
                                                daemon=True)
@@ -35,10 +35,11 @@ class Autoscroll(Base):
                                     daemon=True)
 
     def start(self, parse_argv: bool = False) -> None:
-        # update from command line
-        # it is a thread because in order to create an icon widget,
-        # a qt application has has to be running
-        # (qt applications have to run in the main thread)
+        # update from the command line
+        # it is a thread because in order to create a qt icon widget,
+        # a qt application has to be running in the main thread.
+        # so, if the icon is enabled, the thread will have to wait untill the
+        # qt application is running in the main thread
         Thread(target=self.update,
                kwargs=self.config.parse_argv() if parse_argv else {}).start()
         # start listening for mouse movements and clicks
@@ -51,7 +52,7 @@ class Autoscroll(Base):
             self.thread_config.start()
         # debug
         self._print('initial', self.debug.initial)
-        # if the icon is not enabled, the main thread just waits
+        # wait untill the icon is enabled, then run a qt application
         self.icon.start_qt_when_icon_is_enabled()
 
     def _update_from_config_file(self) -> None:
