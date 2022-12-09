@@ -13,7 +13,8 @@ The package requires `pynput` to work, to display an icon you need to install `p
 pip install autoscroll pyside6
 ```
 
-built-in icon: <img src="https://raw.githubusercontent.com/kongrentian/autoscroll/master/autoscroll/resources/img/icon.svg" width="50" height="50">
+built-in icon:
+![icon](./autoscroll/resources/img/icon.svg)
 
 You can run it on startup by creating a systemd service on Linux or by adding
 the `.exe` file of the script in the venv folder to autostart on Windows.
@@ -35,9 +36,11 @@ Once `--buttons-start` is pressed, the scroll thread starts looping.
 Every loop consists of sleeping for an interval, then scrolling for either 0, 1, or -1 pixels on both axis towards the starting point.
 Starting point is the point where `--buttons-start` was pressed.
 Sleep interval is recalculated on every mouse move as such:
+
 ```
     100 / (--scrolling-acceleration * max(distance) + --scrolling-speed)
 ```
+
 If `--scrolling-acceleration` is not 0, the speed of scrolling will be faster
 the farther away you are from the starting point.
 If `--scrolling-acceleration` is 0, the speed of scrolling will be constant.
@@ -45,13 +48,16 @@ If `--scrolling-acceleration` is 0, the speed of scrolling will be constant.
 ### examples
 
 #### start from the package
+
 ```bash
 python3 -m venv venv
 . venv/bin/activate
 pip install autoscroll pyside6
 autoscroll
 ```
+
 #### start from the repository
+
 ```bash
 python3 -m venv venv
 . venv/bin/activate
@@ -61,6 +67,7 @@ python3 -m autoscroll
 ```
 
 #### start with command line options
+
 ```bash
 autoscroll --buttons-start 1 --debug-click --icon-disable
 ```
@@ -70,9 +77,11 @@ autoscroll --buttons-start 1 --debug-click --icon-disable
 ```bash
 autoscroll --icon-enable @config.txt
 ```
+
 If `config.txt` is defined like this, its contents will be used as command line arguments - they will be loaded only once.
 Arguments can be placed wherever - on one line, on several lines.
 For example,
+
 ```
 --buttons-start 1
 --buttons-hold --debug-click
@@ -83,11 +92,13 @@ For example,
 ```bash
 autoscroll --config-enable --config-path config.txt
 ```
+
 If config.txt is defined like this, the process will listen for changes in that
 file and update itself.
 Arguments can be placed wherever - on one line, on several lines
 The file is checked for changess every `--config-interval`.
 For example:
+
 ```
 --buttons-start 1 --buttons-hold
 --debug_click
