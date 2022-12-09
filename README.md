@@ -1,4 +1,8 @@
-# Information
+# Status
+
+Finished
+
+# Description
 
 Enables universal autoscroll.
 
