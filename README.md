@@ -13,7 +13,7 @@ The package requires `pynput` to work, to display an icon you need to install `p
 pip install autoscroll pyside6
 ```
 
-built-in icon: ![icon](./autoscroll/resources/img/icon.svg | width=50)
+built-in icon: <img src="https://raw.githubusercontent.com/jingyangzhenren/app-cli-autoscroll/master/autoscroll/resources/img/icon.svg" width="50" height="50">
 
 You can run it on startup by creating a systemd service on Linux or by adding
 the `.exe` file of the script in the venv folder to autostart on Windows.
