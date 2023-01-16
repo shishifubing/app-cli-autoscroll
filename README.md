@@ -1,16 +1,13 @@
 # [`app-cli-autoscroll`][repo]
 
+<!-- shields -->
+[![shield-finished]][repo]
+
 <!-- internal links -->
 
 <!-- external links -->
 [repo]: https://github.com/shishifubing-com/app-cli-autoscroll
-
-## Status
-
-Finished
-
-
-## Description
+[shield-finished]: https://img.shields.io/badge/status-finished-informational?style=for-the-badge
 
 Cross-platform CLI app enabling universal autoscroll.
 
