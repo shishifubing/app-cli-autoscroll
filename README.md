@@ -1,10 +1,18 @@
-# Status
+# [`app-cli-autoscroll`][repo]
+
+<!-- internal links -->
+
+<!-- external links -->
+[repo]: https://github.com/shishifubing-com/app-cli-autoscroll
+
+## Status
 
 Finished
 
-# Description
 
-Enables universal autoscroll.
+## Description
+
+Cross-platform CLI app enabling universal autoscroll.
 
 Pretty pointless since on Linux you can achieve it using config files
 (see [the example](#xorg-server-config-example)) and for Windows there are usually drivers.
