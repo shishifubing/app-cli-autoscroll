@@ -1,13 +1,11 @@
-# [`app-cli-autoscroll`][repo]
+# [`app-cli-autoscroll`][repo-url]
 
 <!-- shields -->
-[![shield-finished]][repo]
 
-<!-- internal links -->
+[![AGPLv3.0 License][license-shield]][license]
+[![Status][status-finished-shield]][repo-url]
 
-<!-- external links -->
-[repo]: https://github.com/shishifubing-com/app-cli-autoscroll
-[shield-finished]: https://img.shields.io/badge/status-finished-informational?style=for-the-badge
+<!-- description -->
 
 Cross-platform CLI app enabling universal autoscroll.
 
@@ -210,3 +208,19 @@ Section "InputClass"
   Option       "NaturalScrolling" "true"
 EndSection
 ```
+
+
+<!-- relative links -->
+
+[license]: ./LICENSE
+
+<!-- project links -->
+
+[repo-url]: https://github.com/shishifubing-com/app-cli-autoscroll
+
+<!-- external links -->
+
+<!-- shield links -->
+
+[status-finished-shield]: https://img.shields.io/badge/status-finished-informational?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/shishifubing/app-cli-autoscroll.svg?style=for-the-badge
