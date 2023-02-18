@@ -1,46 +1,52 @@
-# [`app-cli-autoscroll`][repo-url]
+<div align="center" markdown="1">
 
-<!-- shields -->
+# [`app-cli-autoscroll`][url-repo]
 
-[![AGPLv3.0 License][license-shield]][license]
-[![Status][status-finished-shield]][repo-url]
+[![License][shield-license]][url-license]
+[![Status][shield-status-finished]][url-repo]
 
-<!-- description -->
+Cross-platform CLI app enabling universal autoscroll
 
-Cross-platform CLI app enabling universal autoscroll.
+</div>
 
-Pretty pointless since on Linux you can achieve it using config files
-(see [the example](#xorg-server-config-example)) and for Windows there are usually drivers.
+# About The Project
 
-Supports only mouse buttons.
+I bought a Logitech Marble Mouse and couldn't make the autoscroll work on Linux, 
+so I decided to make a python package to solve this problem 
 
-The package requires `pynput` to work, to display an icon you need to install `pyside6` (`qt6` package).
+It was a pretty much pointless idea because on Linux you can achieve autoscroll using config files
+(see [the example](#xorg-server-config-example)) and for Windows there are usually drivers,
+but I decided to finish the project anyway
+
+The package supports only mouse buttons
+
+The package requires `pynput` to work, to display an icon you need to install `pyside6` (`qt6` package)
 
 ```bash
 pip install autoscroll pyside6
 ```
 
-built-in icon: <img src="https://raw.githubusercontent.com/shishifubing-com/app-cli-autoscroll/master/autoscroll/resources/img/icon.svg" width="50" height="50">
+Built-in icon: <img src="https://raw.githubusercontent.com/shishifubing-com/app-cli-autoscroll/master/autoscroll/resources/img/icon.svg" width="50" height="50">
 
 You can run it on startup by creating a systemd service on Linux or by adding
-the `.exe` file of the script in the venv folder to autostart on Windows.
+the `.exe` file of the script in the venv folder to autostart on Windows
 
 ## Usage
 
-By default, the icon is disabled, to enable it pass `--icon-enable`.
+By default, the icon is disabled, to enable it pass `--icon-enable`
 
 You can pass file contents as command line arguments using `@path/to/the/file` syntax.
-Arguments in that case can be placed wherever - on one line, on several lines.
+Arguments in that case can be placed wherever - on one line, on several lines
 
-If you want to dynamically pass runtime arguments (without restarting the process), you can use `--config` options for it.
+If you want to dynamically pass runtime arguments (without restarting the process), you can use `--config` options for it
 
-Once you press `--buttons-start`, you can scroll vertically or horizontally just by moving your mouse untill you press `--buttons-end`.
+Once you press `--buttons-start`, you can scroll vertically or horizontally just by moving your mouse untill you press `--buttons-end`
 
-If `--buttons-hold` is set, the srolling ends once you release `--buttons-start`.
+If `--buttons-hold` is set, the srolling ends once you release `--buttons-start`
 
-Once `--buttons-start` is pressed, the scroll thread starts looping.
-Every loop consists of sleeping for an interval, then scrolling for either 0, 1, or -1 pixels on both axis towards the starting point.
-Starting point is the point where `--buttons-start` was pressed.
+Once `--buttons-start` is pressed, the scroll thread starts looping
+Every loop consists of sleeping for an interval, then scrolling for either 0, 1, or -1 pixels on both axis towards the starting point
+Starting point is the point where `--buttons-start` was pressed
 Sleep interval is recalculated on every mouse move as such:
 
 ```
@@ -48,12 +54,12 @@ Sleep interval is recalculated on every mouse move as such:
 ```
 
 If `--scrolling-acceleration` is not 0, the speed of scrolling will be faster
-the farther away you are from the starting point.
-If `--scrolling-acceleration` is 0, the speed of scrolling will be constant.
+the farther away you are from the starting point
+If `--scrolling-acceleration` is 0, the speed of scrolling will be constant
 
-### examples
+### Examples
 
-#### start from the package
+#### Use the package
 
 ```bash
 python3 -m venv venv
@@ -62,30 +68,30 @@ pip install autoscroll pyside6
 autoscroll
 ```
 
-#### start from the repository
+#### Use the source code
 
 ```bash
 python3 -m venv venv
 . venv/bin/activate
-git clone https://github.com/kongrentian/autoscroll.git
+git clone https://github.com/shishifubing/app-cli-autoscroll.git
 pip install -r autoscroll/requirements.txt
 python3 -m autoscroll
 ```
 
-#### start with command line options
+#### Command line options
 
 ```bash
 autoscroll --buttons-start 1 --debug-click --icon-disable
 ```
 
-#### start with the configuration file passed once
+#### Pass a configuration file once
 
 ```bash
 autoscroll --icon-enable @config.txt
 ```
 
-If `config.txt` is defined like this, its contents will be used as command line arguments - they will be loaded only once.
-Arguments can be placed wherever - on one line, on several lines.
+If `config.txt` is defined like this, its contents will be used as command line arguments - they will be loaded only once
+Arguments can be placed wherever - on one line, on several lines
 For example,
 
 ```
@@ -93,16 +99,16 @@ For example,
 --buttons-hold --debug-click
 ```
 
-#### start with the process listening to the changes in the configuration file
+#### Listen for changes in the configuration file
 
 ```bash
 autoscroll --config-enable --config-path config.txt
 ```
 
 If config.txt is defined like this, the process will listen for changes in that
-file and update itself.
+file and update itself
 Arguments can be placed wherever - on one line, on several lines
-The file is checked for changess every `--config-interval`.
+The file is checked for changess every `--config-interval`
 For example:
 
 ```
@@ -113,10 +119,10 @@ For example:
 ### `--help` output
 
 ```
-usage: linux-xorg-autoscroll [-h] [-ss SCROLLING_SPEED] [-sd SCROLLING_DEAD_AREA]
-                             [-sa SCROLLING_ACCELERATION] [-bh] [-bs BUTTONS_START] [-be BUTTONS_END]
-                             [-ce] [-cp CONFIG_PATH] [-ci CONFIG_INTERVAL] [-ie] [-ip ICON_PATH]
-                             [-is ICON_SIZE] [-df] [-dc] [-ds] [-di]
+usage: autoscroll [-h] [-ss SCROLLING_SPEED] [-sd SCROLLING_DEAD_AREA]
+                  [-sa SCROLLING_ACCELERATION] [-bh] [-bs BUTTONS_START] [-be BUTTONS_END]
+                  [-ce] [-cp CONFIG_PATH] [-ci CONFIG_INTERVAL] [-ie] [-ip ICON_PATH]
+                  [-is ICON_SIZE] [-df] [-dc] [-ds] [-di]
 
 ...
 
@@ -175,21 +181,6 @@ debug:
   -di, --debug-initial  if set, startup configuration will be printed to stdout
 ```
 
-### lines of code
-
-```
--------------------------------------------------------------------------------
-Language                     files          blank        comment           code
--------------------------------------------------------------------------------
-Python                          10            238             62            857
-Markdown                         1             56              0            158
-SVG                              3              3              4             55
-TOML                             1              0              0              3
--------------------------------------------------------------------------------
-SUM:                            15            297             66           1073
--------------------------------------------------------------------------------
-```
-
 ## xorg-server config example
 
 ```conf
@@ -212,15 +203,15 @@ EndSection
 
 <!-- relative links -->
 
-[license]: ./LICENSE
-
 <!-- project links -->
 
-[repo-url]: https://github.com/shishifubing-com/app-cli-autoscroll
+[url-repo]: https://github.com/shishifubing-com/app-cli-autoscroll
+[url-license]: https://github.com/shishifubing/app-cli-autoscroll/blob/main/LICENSE
+
 
 <!-- external links -->
 
 <!-- shield links -->
 
-[status-finished-shield]: https://img.shields.io/badge/status-finished-informational?style=for-the-badge
-[license-shield]: https://img.shields.io/github/license/shishifubing/app-cli-autoscroll.svg?style=for-the-badge
+[shield-status-finished]: https://img.shields.io/badge/status-finished-informational?style=for-the-badge
+[shield-license]: https://img.shields.io/github/license/shishifubing/app-cli-autoscroll.svg?style=for-the-badge
