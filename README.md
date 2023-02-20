@@ -9,7 +9,7 @@ Cross-platform CLI app enabling universal autoscroll
 
 </div>
 
-# About The Project
+## About The Project
 
 I bought a Logitech Marble Mouse and couldn't make the autoscroll work on Linux, 
 so I decided to make a python package to solve this problem 
