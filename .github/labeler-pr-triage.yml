@@ -1,0 +1,14 @@
+# config for https://github.com/actions/labeler
+
+repo:
+  - "*"
+
+docs:
+  - docs/**/*
+  - any: ["*.md", "!CHANGELOG.md"]
+
+website:
+  - website/**/*
+
+ci:
+  - .github/**/*
