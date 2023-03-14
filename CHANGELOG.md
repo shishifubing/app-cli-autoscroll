@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.35 - 2023-03-14
+
+<!-- Automatically generated in https://github.com/shishifubing/app-cli-autoscroll/actions/runs/4421081136 -->
+**Full Changelog**: https://github.com/shishifubing/app-cli-autoscroll/compare/v0.1.34...v0.1.35
+
 ## v0.1.34 - 2023-03-13
 
 ### Documentation changes
